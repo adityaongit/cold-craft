@@ -17,11 +17,22 @@ import {
   Moon,
   Sun,
   ArrowLeft,
+  User,
+  LogOut,
 } from "lucide-react";
 import { useColorMode } from "@/components/ui/color-mode";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SearchModal } from "@/components/common/SearchModal";
 import { useSidebarStore } from "@/store/useSidebarStore";
+import { useSession, signOut } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import {
+  MenuRoot,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+} from "@/components/ui/menu";
 
 interface NavItem {
   label: string;
@@ -57,8 +68,10 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { colorMode, toggleColorMode } = useColorMode();
   const { isCollapsed, toggleCollapsed } = useSidebarStore();
+  const { data: session } = useSession();
 
   // Enable global keyboard shortcuts
   useGlobalShortcuts(() => setSearchOpen(true));
@@ -66,6 +79,11 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
 
   return (
     <Flex h="100vh" bg="bg.surface" overflow="hidden" direction="column">
@@ -212,7 +230,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
 
         {/* Actions */}
         <Box flex={1} />
-        <HStack gap={1}>
+        <HStack gap={2}>
           <IconButton
             aria-label="Toggle color mode"
             variant="ghost"
@@ -221,6 +239,42 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
           >
             {mounted && (colorMode === "light" ? <Moon size={16} /> : <Sun size={16} />)}
           </IconButton>
+
+          {/* User Menu */}
+          <MenuRoot>
+            <MenuTrigger asChild>
+              <IconButton
+                aria-label="User menu"
+                variant="ghost"
+                size="sm"
+              >
+                <User size={16} />
+              </IconButton>
+            </MenuTrigger>
+            <MenuContent>
+              <Box px={3} py={2} borderBottomWidth="1px" borderColor="border.subtle">
+                <Text fontSize="sm" fontWeight="semibold">
+                  {session?.user?.name || "User"}
+                </Text>
+                <Text fontSize="xs" color="fg.muted">
+                  {session?.user?.email}
+                </Text>
+              </Box>
+              <MenuItem value="profile" onClick={() => router.push("/settings")}>
+                <Icon mr={2}>
+                  <User size={14} />
+                </Icon>
+                Profile
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem value="logout" onClick={handleSignOut} color="red.500">
+                <Icon mr={2}>
+                  <LogOut size={14} />
+                </Icon>
+                Sign Out
+              </MenuItem>
+            </MenuContent>
+          </MenuRoot>
         </HStack>
       </Flex>
 

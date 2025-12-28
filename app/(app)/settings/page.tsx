@@ -98,7 +98,7 @@ export default function SettingsPage() {
                           <Text fontSize="sm">{shortcut.description}</Text>
                           <HStack gap={1}>
                             {shortcut.keys.map((key, i) => (
-                              <Badge key={i} variant="outline" fontFamily="mono" px={2}>
+                              <Badge key={i} variant="outline" px={2} fontSize="xs" fontWeight="semibold">
                                 {key}
                               </Badge>
                             ))}

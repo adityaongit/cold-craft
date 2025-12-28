@@ -85,8 +85,8 @@ export function TemplatePreview({
               borderWidth="1px"
               borderColor={{ base: "gray.200", _dark: "gray.700" }}
               p={4}
-              fontFamily="mono"
               fontSize="sm"
+              lineHeight="1.7"
               whiteSpace="pre-wrap"
               maxH="400px"
               overflowY="auto"

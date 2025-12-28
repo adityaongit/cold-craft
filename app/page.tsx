@@ -2,18 +2,26 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Spinner, Center } from "@chakra-ui/react";
+import { Center, Spinner } from "@chakra-ui/react";
+import { useSession } from "@/lib/auth-client";
 
 export default function HomePage() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
-    router.replace("/dashboard");
-  }, [router]);
+    if (!isPending) {
+      if (session) {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/login");
+      }
+    }
+  }, [session, isPending, router]);
 
   return (
-    <Center h="100vh">
-      <Spinner size="xl" color="brand.500" />
+    <Center h="100vh" bg="bg.surface">
+      <Spinner size="xl" />
     </Center>
   );
 }
