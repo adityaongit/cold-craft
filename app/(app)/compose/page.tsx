@@ -117,7 +117,7 @@ function ComposePageContent() {
       <Grid
         templateColumns={{ base: "1fr", lg: "1fr 1.2fr" }}
         gap={4}
-        h="calc(100vh - 140px)"
+        h="full"
       >
         {/* Left Panel: Template & Variables */}
         <Card.Root
@@ -128,10 +128,11 @@ function ComposePageContent() {
           display="flex"
           flexDirection="column"
           h="full"
+          overflow="hidden"
         >
           <VStack align="stretch" gap={4} h="full">
             {/* Template Selector */}
-            <Box>
+            <Box flexShrink={0}>
               <Text fontSize="sm" fontWeight="semibold" mb={3} color="fg.default">
                 Template
               </Text>
@@ -181,7 +182,7 @@ function ComposePageContent() {
 
             {/* Variables Section - Scrollable */}
             {selectedTemplate && selectedTemplate.variables.length > 0 && (
-              <Box flex="1" overflowY="auto">
+              <Box flex="1" overflowY="auto" minH={0}>
                 <Text fontSize="sm" fontWeight="semibold" mb={3} color="fg.default">
                   Variables
                 </Text>
@@ -264,47 +265,26 @@ function ComposePageContent() {
           display="flex"
           flexDirection="column"
           h="full"
+          overflow="hidden"
         >
           <VStack align="stretch" gap={4} h="full">
-            <HStack justify="space-between">
-              <Text fontWeight="semibold" fontSize="md">
-                Preview
-              </Text>
-              {selectedTemplate && (
-                <HStack gap={2}>
-                  <Badge size="xs" variant="subtle" colorPalette="gray">
-                    {selectedTemplate.platform}
-                  </Badge>
-                  <Badge size="xs" variant="outline" colorPalette="gray">
-                    {selectedTemplate.tone}
-                  </Badge>
-                </HStack>
-              )}
-            </HStack>
-
-            <Box
-              flex="1"
-              bg="bg.surface"
-              borderRadius="md"
-              borderWidth="1px"
-              borderColor={{ base: "gray.200", _dark: "gray.700" }}
-              p={5}
-              fontSize="sm"
-              lineHeight="1.7"
-              whiteSpace="pre-wrap"
-              overflowY="auto"
-            >
-              {composedMessage || (
-                <Text color="fg.muted" fontSize="sm">
-                  Your composed message will appear here...
+            {/* Header with Copy Button */}
+            <HStack justify="space-between" flexShrink={0}>
+              <HStack gap={3}>
+                <Text fontWeight="semibold" fontSize="md">
+                  Preview
                 </Text>
-              )}
-            </Box>
-
-            <HStack justify="space-between" pt={2} borderTopWidth="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
-              <Text fontSize="xs" color="fg.muted">
-                {composedMessage.split(/\s+/).filter(Boolean).length} words
-              </Text>
+                {selectedTemplate && (
+                  <HStack gap={2}>
+                    <Badge size="xs" variant="subtle" colorPalette="gray">
+                      {selectedTemplate.platform}
+                    </Badge>
+                    <Badge size="xs" variant="outline" colorPalette="gray">
+                      {selectedTemplate.tone}
+                    </Badge>
+                  </HStack>
+                )}
+              </HStack>
               <Button
                 onClick={handleCopy}
                 disabled={!composedMessage || !selectedTemplate}
@@ -321,6 +301,34 @@ function ComposePageContent() {
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? "Copied!" : "Copy Message"}
               </Button>
+            </HStack>
+
+            {/* Scrollable Preview */}
+            <Box
+              flex="1"
+              bg="bg.surface"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor={{ base: "gray.200", _dark: "gray.700" }}
+              p={5}
+              fontSize="sm"
+              lineHeight="1.7"
+              whiteSpace="pre-wrap"
+              overflowY="auto"
+              minH={0}
+            >
+              {composedMessage || (
+                <Text color="fg.muted" fontSize="sm">
+                  Your composed message will appear here...
+                </Text>
+              )}
+            </Box>
+
+            {/* Word Count Footer */}
+            <HStack justify="flex-end" pt={2} borderTopWidth="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} flexShrink={0}>
+              <Text fontSize="xs" color="fg.muted">
+                {composedMessage.split(/\s+/).filter(Boolean).length} words
+              </Text>
             </HStack>
           </VStack>
         </Card.Root>
