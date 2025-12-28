@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Categories for organizing templates
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  color       String     @default("#6366F1") // Hex color for UI
+  icon        String     @default("folder") // Lucide icon name
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  templates   Template[]
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// Message templates with variable support
+model Template {
+  id            String         @id @default(cuid())
+  title         String
+  content       String         @db.Text
+  description   String?
+  platform      Platform       @default(OTHER)
+  tone          Tone           @default(PROFESSIONAL)
+  length        Length         @default(MEDIUM)
+  categories    Category[]
+  tags          Tag[]
+  variables     Variable[]
+  usageCount    Int            @default(0)
+  lastUsedAt    DateTime?
+  isFavorite    Boolean        @default(false)
+  isArchived    Boolean        @default(false)
+  usageHistory  UsageHistory[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// Platform enum for templates
+enum Platform {
+  LINKEDIN
+  GMAIL
+  TWITTER
+  COLD_EMAIL
+  OTHER
+}
+
+// Tone enum for templates
+enum Tone {
+  PROFESSIONAL
+  CASUAL
+  FRIENDLY
+  FORMAL
+  ENTHUSIASTIC
+}
+
+// Length classification
+enum Length {
+  SHORT      // < 100 words
+  MEDIUM     // 100-250 words
+  LONG       // > 250 words
+}
+
+// Tags for flexible organization
+model Tag {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  color     String     @default("#8B5CF6")
+  templates Template[]
+  createdAt DateTime   @default(now())
+}
+
+// Variables extracted from templates
+model Variable {
+  id           String    @id @default(cuid())
+  name         String    // e.g., "name", "company", "position"
+  displayName  String    // e.g., "Recipient's Name"
+  description  String?
+  defaultValue String?
+  type         VarType   @default(TEXT)
+  isRequired   Boolean   @default(true)
+  template     Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   String
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  @@unique([templateId, name])
+}
+
+// Variable type enum
+enum VarType {
+  TEXT
+  TEXTAREA
+  SELECT
+  DATE
+  URL
+  EMAIL
+  PHONE
+  RESUME_SELECT // Special type for resume picker
+}
+
+// Global variables (reusable across templates)
+model GlobalVariable {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  displayName  String
+  value        String
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Resume management with versioning
+model Resume {
+  id           String          @id @default(cuid())
+  name         String
+  description  String?
+  versions     ResumeVersion[]
+  currentVersionId String?     @unique
+  currentVersion   ResumeVersion? @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+  isDefault    Boolean         @default(false)
+  usageHistory UsageHistory[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+// Resume versions for tracking changes
+model ResumeVersion {
+  id          String    @id @default(cuid())
+  version     Int       @default(1)
+  fileName    String
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  notes       String?
+  resume      Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId    String
+  currentFor  Resume?   @relation("CurrentVersion")
+  createdAt   DateTime  @default(now())
+
+  @@unique([resumeId, version])
+}
+
+// Track template usage for analytics
+model UsageHistory {
+  id              String    @id @default(cuid())
+  template        Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId      String
+  resume          Resume?   @relation(fields: [resumeId], references: [id])
+  resumeId        String?
+  variableValues  Json      // Stores the filled variable values
+  platform        Platform
+  recipientName   String?
+  companyName     String?
+  success         Boolean?  // User can mark if they got a response
+  notes           String?
+  createdAt       DateTime  @default(now())
+}
+
+// Quick contacts for autofill
+model Contact {
+  id         String   @id @default(cuid())
+  name       String
+  email      String?
+  linkedin   String?
+  company    String?
+  position   String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
