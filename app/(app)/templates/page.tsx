@@ -10,14 +10,13 @@ import {
   Button,
   Select,
   Tabs,
-  Spinner,
-  Center,
   Portal,
   createListCollection,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TemplateCard } from "@/components/templates/TemplateCard";
 import { EmptyState } from "@/components/common/EmptyState";
+import { TemplatesPageSkeleton } from "@/components/common/SkeletonLoaders";
 import { Plus, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TemplateWithRelations } from "@/types";
@@ -205,9 +204,7 @@ export default function TemplatesPage() {
 
         {/* Templates Grid */}
         {loading ? (
-          <Center py={12}>
-            <Spinner size="xl" color="brand.500" />
-          </Center>
+          <TemplatesPageSkeleton />
         ) : templates.length === 0 ? (
           <EmptyState
             icon={FileText}

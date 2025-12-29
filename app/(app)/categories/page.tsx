@@ -13,8 +13,6 @@ import {
   IconButton,
   Input,
   Textarea,
-  Spinner,
-  Center,
   Grid,
   DialogRoot,
   DialogContent,
@@ -28,6 +26,7 @@ import {
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { EmptyState } from "@/components/common/EmptyState";
+import { CategoriesPageSkeleton } from "@/components/common/SkeletonLoaders";
 import { Plus, Folder, Edit2, Trash2, Save, X, Briefcase, GraduationCap, Code, Mail, Phone, Users, Star, Heart, Target, Zap, TrendingUp, Award, BookOpen, Home, Settings as SettingsIcon } from "lucide-react";
 import { CategoryWithCount } from "@/types";
 import { toaster, Toaster } from "@/components/ui/toaster";
@@ -231,9 +230,7 @@ export default function CategoriesPage() {
 
         {/* Categories List */}
         {loading ? (
-          <Center py={12}>
-            <Spinner size="xl" color="brand.500" />
-          </Center>
+          <CategoriesPageSkeleton />
         ) : categories.length === 0 ? (
           <EmptyState
             icon={Folder}

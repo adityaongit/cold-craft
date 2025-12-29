@@ -16,6 +16,7 @@ import { MessageSquare, FileText, TrendingUp, Mail, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UsageStats } from "@/types";
 import { useQuery } from "@tanstack/react-query";
+import { DashboardSkeleton } from "@/components/common/SkeletonLoaders";
 
 async function fetchStats(): Promise<UsageStats> {
   const res = await fetch("/api/usage/stats");
@@ -33,9 +34,12 @@ export default function DashboardPage() {
 
   return (
     <AppLayout title="Dashboard">
-      <VStack align="stretch" gap={6}>
-        {/* Quick Actions */}
-        <Box>
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <VStack align="stretch" gap={6}>
+          {/* Quick Actions */}
+          <Box>
           <Text fontSize="lg" fontWeight="semibold" mb={4}>
             Quick Actions
           </Text>
@@ -140,7 +144,7 @@ export default function DashboardPage() {
         </Box>
 
         {/* Stats */}
-        {!loading && stats && (
+        {stats && (
           <>
             <Box>
               <Text fontSize="lg" fontWeight="semibold" mb={4}>
@@ -295,7 +299,8 @@ export default function DashboardPage() {
             )}
           </>
         )}
-      </VStack>
+        </VStack>
+      )}
     </AppLayout>
   );
 }
