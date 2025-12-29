@@ -218,10 +218,10 @@ export default function DashboardPage() {
                       </Icon>
                     </HStack>
                     <Text fontSize="3xl" fontWeight="bold">
-                      {stats.successRate !== null ? Math.round(stats.successRate) : 0}%
+                      {stats.successRate !== null && stats.successRate !== undefined ? Math.round(stats.successRate) : 0}%
                     </Text>
                     <Text fontSize="xs" color="fg.muted">
-                      {stats.successRate !== null ? "Response rate" : "No data yet"}
+                      {stats.successRate !== null && stats.successRate !== undefined ? "Response rate" : "No data yet"}
                     </Text>
                   </VStack>
                 </Card.Root>
