@@ -63,8 +63,8 @@ export default function DashboardPage() {
             >
               <HStack gap={3}>
                 <Box
-                  bg="brand.500"
-                  color="white"
+                  bg="bg.muted"
+                  color="fg.default"
                   p={3}
                   borderRadius="lg"
                 >
