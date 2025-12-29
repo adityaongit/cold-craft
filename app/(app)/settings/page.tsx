@@ -12,11 +12,8 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Settings, User, Palette, Zap, Database } from "lucide-react";
-import { useColorMode } from "@/components/ui/color-mode";
 
 export default function SettingsPage() {
-  const { colorMode, toggleColorMode } = useColorMode();
   const [autoSave, setAutoSave] = useState(true);
   const [notifications, setNotifications] = useState(true);
 
@@ -27,8 +24,6 @@ export default function SettingsPage() {
         <Tabs.Root defaultValue="general">
           <Tabs.List>
             <Tabs.Trigger value="general">General</Tabs.Trigger>
-            <Tabs.Trigger value="appearance">Appearance</Tabs.Trigger>
-            <Tabs.Trigger value="data">Data & Privacy</Tabs.Trigger>
             <Tabs.Trigger value="about">About</Tabs.Trigger>
           </Tabs.List>
 
@@ -79,111 +74,6 @@ export default function SettingsPage() {
                     </HStack>
                   </VStack>
                 </Card.Root>
-
-                <Card.Root bg={{ base: "white", _dark: "gray.800" }} p={6}>
-                  <VStack align="stretch" gap={4}>
-                    <Text fontSize="lg" fontWeight="semibold">
-                      Keyboard Shortcuts
-                    </Text>
-
-                    <VStack align="stretch" gap={3}>
-                      {[
-                        { keys: ["⌘", "K"], description: "Quick search" },
-                        { keys: ["⌘", "N"], description: "New template" },
-                        { keys: ["⌘", "B"], description: "Toggle sidebar" },
-                        { keys: ["⌘", "/"], description: "Show shortcuts" },
-                        { keys: ["Esc"], description: "Close modal" },
-                      ].map((shortcut, idx) => (
-                        <HStack key={idx} justify="space-between">
-                          <Text fontSize="sm">{shortcut.description}</Text>
-                          <HStack gap={1}>
-                            {shortcut.keys.map((key, i) => (
-                              <Badge key={i} variant="outline" px={2} fontSize="xs" fontWeight="semibold">
-                                {key}
-                              </Badge>
-                            ))}
-                          </HStack>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  </VStack>
-                </Card.Root>
-              </VStack>
-            </Tabs.Content>
-
-            {/* Appearance Tab */}
-            <Tabs.Content value="appearance">
-              <VStack align="stretch" gap={4}>
-                <Card.Root bg={{ base: "white", _dark: "gray.800" }} p={6}>
-                  <VStack align="stretch" gap={4}>
-                    <Text fontSize="lg" fontWeight="semibold">
-                      Theme
-                    </Text>
-
-                    <HStack justify="space-between">
-                      <VStack align="start" gap={0}>
-                        <Text fontWeight="medium">Dark mode</Text>
-                        <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }}>
-                          Use dark theme for better visibility in low light
-                        </Text>
-                      </VStack>
-                      <Switch.Root
-                        checked={colorMode === "dark"}
-                        onCheckedChange={toggleColorMode}
-                      >
-                        <Switch.HiddenInput />
-                        <Switch.Control>
-                          <Switch.Thumb />
-                        </Switch.Control>
-                      </Switch.Root>
-                    </HStack>
-                  </VStack>
-                </Card.Root>
-
-                <Card.Root bg={{ base: "white", _dark: "gray.800" }} p={6}>
-                  <VStack align="stretch" gap={4}>
-                    <Text fontSize="lg" fontWeight="semibold">
-                      Brand Color
-                    </Text>
-                    <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }}>
-                      Current brand color: <Badge colorScheme="brand">#6366F1</Badge>
-                    </Text>
-                  </VStack>
-                </Card.Root>
-              </VStack>
-            </Tabs.Content>
-
-            {/* Data & Privacy Tab */}
-            <Tabs.Content value="data">
-              <VStack align="stretch" gap={4}>
-                <Card.Root bg={{ base: "white", _dark: "gray.800" }} p={6}>
-                  <VStack align="stretch" gap={4}>
-                    <Text fontSize="lg" fontWeight="semibold">
-                      Data Storage
-                    </Text>
-
-                    <VStack align="start" gap={2}>
-                      <Text fontSize="sm">
-                        All your data is stored locally in your PostgreSQL database.
-                      </Text>
-                      <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }}>
-                        We don't collect or share any of your personal information.
-                      </Text>
-                    </VStack>
-                  </VStack>
-                </Card.Root>
-
-                <Card.Root bg={{ base: "white", _dark: "gray.800" }} p={6}>
-                  <VStack align="stretch" gap={4}>
-                    <Text fontSize="lg" fontWeight="semibold">
-                      Export Data
-                    </Text>
-
-                    <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }}>
-                      You can export your templates and data using Prisma Studio or by running database queries directly.
-                    </Text>
-                  </VStack>
-                </Card.Root>
               </VStack>
             </Tabs.Content>
 
@@ -210,8 +100,7 @@ export default function SettingsPage() {
                         "Next.js 15",
                         "React 19",
                         "Chakra UI v3",
-                        "Prisma",
-                        "PostgreSQL",
+                        "MongoDB",
                         "TypeScript",
                       ].map((tech) => (
                         <Badge key={tech} variant="subtle">
@@ -235,7 +124,7 @@ export default function SettingsPage() {
                   </VStack>
 
                   <Text fontSize="sm" color={{ base: "gray.500", _dark: "gray.500" }}>
-                    © 2024 PitchPad. Built with ❤️ for better outreach.
+                    © 2026 PitchPad. Built with ❤️ for better outreach.
                   </Text>
                 </VStack>
               </Card.Root>

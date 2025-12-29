@@ -16,11 +16,13 @@ import { TemplateWithRelations } from "@/types";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { TemplateForm, type TemplateFormData } from "@/components/templates/TemplateForm";
 import { TemplatePreview } from "@/components/templates/TemplatePreview";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function EditTemplatePage() {
   const router = useRouter();
   const params = useParams();
   const templateId = params?.id as string;
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,8 +31,6 @@ export default function EditTemplatePage() {
     title: "",
     content: "",
     description: "",
-    platform: "OTHER",
-    tone: "PROFESSIONAL",
     categoryIds: [],
     tagIds: [],
   });
@@ -48,8 +48,6 @@ export default function EditTemplatePage() {
           title: template.title,
           content: template.content,
           description: template.description || "",
-          platform: template.platform,
-          tone: template.tone,
           categoryIds: template.categories.map((c) => c.id),
           tagIds: template.tags.map((t) => t.id),
         });
@@ -73,23 +71,23 @@ export default function EditTemplatePage() {
       });
 
       if (res.ok) {
+        // Invalidate all template queries to refresh data everywhere
+        queryClient.invalidateQueries({ queryKey: ["templates"] });
+
         toaster.success({
-          title: "Template updated",
-          description: "Your template has been updated successfully",
+          title: "Template updated successfully",
         });
         router.push(`/templates`);
       } else {
         const error = await res.json();
         toaster.error({
-          title: "Failed to update template",
-          description: error.error || "An error occurred while updating the template",
+          title: error.error || "Failed to update template",
         });
       }
     } catch (error) {
       console.error("Failed to update template:", error);
       toaster.error({
         title: "Failed to update template",
-        description: "An unexpected error occurred",
       });
     } finally {
       setSaving(false);
@@ -98,24 +96,14 @@ export default function EditTemplatePage() {
 
   if (loading) {
     return (
-      <AppLayout
-        breadcrumbs={[
-          { label: "Templates", href: "/templates" },
-          { label: "Edit Template" }
-        ]}
-      >
+      <AppLayout>
         <TemplateEditSkeleton />
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "Templates", href: "/templates" },
-        { label: "Edit Template" }
-      ]}
-    >
+    <AppLayout>
       <form onSubmit={handleSubmit}>
         <VStack align="stretch" gap={6}>
           {/* Header */}
@@ -162,8 +150,6 @@ export default function EditTemplatePage() {
         onClose={() => setShowPreview(false)}
         title={formData.title || "Untitled Template"}
         content={formData.content}
-        platform={formData.platform}
-        tone={formData.tone}
       />
 
       <Toaster />

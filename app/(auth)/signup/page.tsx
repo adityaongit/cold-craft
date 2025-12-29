@@ -123,6 +123,8 @@ export default function SignUpPage() {
                   onClick={handleGoogleSignUp}
                   loading={googleLoading}
                   disabled={googleLoading || loading}
+                  borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                  _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -172,6 +174,8 @@ export default function SignUpPage() {
                         onChange={(e) => setName(e.target.value)}
                         required
                         autoComplete="name"
+                        borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                        _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                       />
                     </VStack>
 
@@ -186,6 +190,8 @@ export default function SignUpPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                         autoComplete="email"
+                        borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                        _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                       />
                     </VStack>
 
@@ -201,6 +207,8 @@ export default function SignUpPage() {
                         required
                         autoComplete="new-password"
                         minLength={8}
+                        borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                        _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                       />
                     </VStack>
 
@@ -216,6 +224,8 @@ export default function SignUpPage() {
                         required
                         autoComplete="new-password"
                         minLength={8}
+                        borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                        _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                       />
                       <Text fontSize="xs" color="fg.muted">
                         Must be at least 8 characters

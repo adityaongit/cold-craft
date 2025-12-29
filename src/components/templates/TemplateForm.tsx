@@ -8,45 +8,19 @@ import {
   Text,
   Input,
   Textarea,
-  Button,
-  Select,
   Card,
   Badge,
   Grid,
   Icon,
-  Portal,
-  createListCollection,
 } from "@chakra-ui/react";
 import { Sparkles } from "lucide-react";
 import { Category, Tag } from "@/types";
 import { extractVariables } from "@/lib/utils";
 
-const platformOptions = createListCollection({
-  items: [
-    { label: "LinkedIn", value: "LINKEDIN" },
-    { label: "Gmail", value: "GMAIL" },
-    { label: "Twitter", value: "TWITTER" },
-    { label: "Cold Email", value: "COLD_EMAIL" },
-    { label: "Other", value: "OTHER" },
-  ],
-});
-
-const toneOptions = createListCollection({
-  items: [
-    { label: "Professional", value: "PROFESSIONAL" },
-    { label: "Casual", value: "CASUAL" },
-    { label: "Friendly", value: "FRIENDLY" },
-    { label: "Formal", value: "FORMAL" },
-    { label: "Enthusiastic", value: "ENTHUSIASTIC" },
-  ],
-});
-
 export interface TemplateFormData {
   title: string;
   content: string;
   description: string;
-  platform: string;
-  tone: string;
   categoryIds: string[];
   tagIds: string[];
 }
@@ -145,78 +119,6 @@ export function TemplateForm({ formData, onChange, isEdit = false }: TemplateFor
             />
           </Box>
 
-          <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-            <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
-                Platform *
-              </Text>
-              <Select.Root
-                collection={platformOptions}
-                value={[formData.platform]}
-                onValueChange={(e) => updateFormData({ platform: e.value[0] })}
-                borderColor={{ base: "gray.300", _dark: "gray.400" }}
-                _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
-              >
-                <Select.HiddenSelect />
-                <Select.Control>
-                  <Select.Trigger>
-                    <Select.ValueText />
-                  </Select.Trigger>
-                  <Select.IndicatorGroup>
-                    <Select.Indicator />
-                  </Select.IndicatorGroup>
-                </Select.Control>
-                <Portal>
-                  <Select.Positioner>
-                    <Select.Content>
-                      {platformOptions.items.map((item) => (
-                        <Select.Item key={item.value} item={item}>
-                          {item.label}
-                          <Select.ItemIndicator />
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Portal>
-              </Select.Root>
-            </Box>
-
-            <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
-                Tone *
-              </Text>
-              <Select.Root
-                collection={toneOptions}
-                value={[formData.tone]}
-                onValueChange={(e) => updateFormData({ tone: e.value[0] })}
-                borderColor={{ base: "gray.300", _dark: "gray.400" }}
-                _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
-              >
-                <Select.HiddenSelect />
-                <Select.Control>
-                  <Select.Trigger>
-                    <Select.ValueText />
-                  </Select.Trigger>
-                  <Select.IndicatorGroup>
-                    <Select.Indicator />
-                  </Select.IndicatorGroup>
-                </Select.Control>
-                <Portal>
-                  <Select.Positioner>
-                    <Select.Content>
-                      {toneOptions.items.map((item) => (
-                        <Select.Item key={item.value} item={item}>
-                          {item.label}
-                          <Select.ItemIndicator />
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Portal>
-              </Select.Root>
-            </Box>
-          </Grid>
-
           <Box>
             <Text fontSize="sm" fontWeight="medium" mb={2}>
               Message Content *
@@ -250,12 +152,13 @@ export function TemplateForm({ formData, onChange, isEdit = false }: TemplateFor
             ) : (
               <VStack align="stretch" gap={2} maxH="150px" overflowY="auto">
                 {categories.map((category) => (
-                  <HStack key={category.id} cursor="pointer">
+                  <HStack key={category.id}>
                     <input
                       type="checkbox"
                       id={`cat-${category.id}`}
                       checked={formData.categoryIds.includes(category.id)}
                       onChange={(e) => {
+                        e.stopPropagation();
                         if (e.target.checked) {
                           updateFormData({
                             categoryIds: [...formData.categoryIds, category.id],
@@ -328,9 +231,9 @@ export function TemplateForm({ formData, onChange, isEdit = false }: TemplateFor
                 </Text>
               </HStack>
               <VStack align="stretch" gap={2} maxH="300px" overflowY="auto">
-                {extractedVars.map((variable, idx) => (
+                {extractedVars.map((variable) => (
                   <HStack
-                    key={idx}
+                    key={variable.name || variable.displayName}
                     justify="space-between"
                     p={2}
                     bg="bg.muted"

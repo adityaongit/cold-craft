@@ -261,28 +261,23 @@ export default function DashboardPage() {
                       cursor="pointer"
                       _hover={{ borderColor: "brand.500", transform: "translateY(-2px)" }}
                       transition="all 0.2s"
-                      onClick={() => router.push(`/templates/${template.id}`)}
+                      onClick={() => router.push(`/compose?templateId=${template.id}`)}
                     >
                       <VStack align="stretch" gap={3}>
-                        <HStack justify="space-between">
-                          <Box
-                            bg={index === 0 ? "brand.500" : "bg.muted"}
-                            color={index === 0 ? "white" : "fg.muted"}
-                            fontWeight="bold"
-                            w={8}
-                            h={8}
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            borderRadius="md"
-                            fontSize="sm"
-                          >
-                            {index + 1}
-                          </Box>
-                          <Badge variant="subtle" colorPalette="gray">
-                            {template.platform}
-                          </Badge>
-                        </HStack>
+                        <Box
+                          bg={index === 0 ? "brand.500" : "bg.muted"}
+                          color={index === 0 ? "white" : "fg.muted"}
+                          fontWeight="bold"
+                          w={8}
+                          h={8}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          borderRadius="md"
+                          fontSize="sm"
+                        >
+                          {index + 1}
+                        </Box>
                         <VStack align="start" gap={1}>
                           <Text fontWeight="semibold" fontSize="md" lineClamp={1}>
                             {template.title}

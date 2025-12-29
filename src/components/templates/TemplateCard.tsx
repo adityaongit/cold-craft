@@ -4,6 +4,7 @@ import { Box, HStack, VStack, Text, Badge, Icon, IconButton, Flex } from "@chakr
 import { Star, Copy, Pencil, Trash2, Clock } from "lucide-react";
 import { TemplateWithRelations } from "@/types";
 import { formatRelativeTime, truncate } from "@/lib/utils";
+import React from "react";
 
 interface TemplateCardProps {
   template: TemplateWithRelations & { _count?: { usageHistory: number } };
@@ -13,21 +14,45 @@ interface TemplateCardProps {
   onUse?: (id: string) => void;
 }
 
-const platformColors = {
-  LINKEDIN: "gray",
-  GMAIL: "gray",
-  TWITTER: "gray",
-  COLD_EMAIL: "gray",
-  OTHER: "gray",
-};
+// Function to render content with variables as badges
+function renderContentWithBadges(content: string) {
+  // Regular expression to match {{variable}} or {{variable:description}} or {{variable|default}}
+  const variableRegex = /\{\{([^}:|]+)(?::([^}|]+))?(?:\|([^}]+))?\}\}/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
 
-const toneColors = {
-  PROFESSIONAL: "gray",
-  CASUAL: "gray",
-  FRIENDLY: "gray",
-  FORMAL: "gray",
-  ENTHUSIASTIC: "gray",
-};
+  while ((match = variableRegex.exec(content)) !== null) {
+    // Add text before the variable
+    if (match.index > lastIndex) {
+      parts.push(content.substring(lastIndex, match.index));
+    }
+
+    // Add the variable as a badge
+    const variableName = match[1].trim();
+    parts.push(
+      <Badge
+        key={`${match.index}-${variableName}`}
+        variant="subtle"
+        colorPalette="blue"
+        size="sm"
+        mx={0.5}
+      >
+        {variableName}
+      </Badge>
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push(content.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : content;
+}
+
 
 export function TemplateCard({
   template,
@@ -107,23 +132,8 @@ export function TemplateCard({
           </HStack>
         </Flex>
 
-        {/* Content Preview */}
-        <Text
-          fontSize="sm"
-          color={{ base: "gray.700", _dark: "gray.300" }}
-          lineClamp={2}
-        >
-          {template.content}
-        </Text>
-
         {/* Tags & Badges */}
         <HStack gap={2} flexWrap="wrap">
-          <Badge colorScheme={platformColors[template.platform]} variant="subtle">
-            {template.platform}
-          </Badge>
-          <Badge colorScheme={toneColors[template.tone]} variant="outline">
-            {template.tone}
-          </Badge>
           <Badge variant="outline">{template.length}</Badge>
           {template.categories.map((cat) => (
             <Badge key={cat.id} variant="subtle" colorScheme="gray">

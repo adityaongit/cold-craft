@@ -335,3 +335,45 @@ export function TemplateEditSkeleton() {
     </VStack>
   );
 }
+
+// Saved Message Card Skeleton
+export function SavedMessageCardSkeleton() {
+  return (
+    <Card.Root bg="bg.panel" borderWidth="1px" borderColor="border.subtle" p={5}>
+      <VStack align="stretch" gap={3}>
+        <HStack justify="space-between">
+          <VStack align="start" gap={2} flex={1}>
+            <Skeleton h={5} w="70%" />
+            <Skeleton h={4} w={24} borderRadius="full" />
+          </VStack>
+          <Skeleton w={6} h={6} borderRadius="md" />
+        </HStack>
+        <Box bg="bg.subtle" p={3} borderRadius="md">
+          <Skeleton h={3} w="full" mb={2} />
+          <Skeleton h={3} w="90%" mb={2} />
+          <Skeleton h={3} w="95%" />
+        </Box>
+        <HStack gap={2}>
+          <Skeleton h={8} w="full" />
+          <Skeleton h={8} w="full" />
+        </HStack>
+        <HStack justify="space-between" pt={2} borderTopWidth="1px">
+          <Skeleton h={3} w={24} />
+          <Skeleton h={3} w={16} />
+        </HStack>
+      </VStack>
+    </Card.Root>
+  );
+}
+
+// Saved Messages Page Loading State
+export function SavedMessagesPageSkeleton() {
+  return (
+    <Grid templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }} gap={4}>
+      <SavedMessageCardSkeleton />
+      <SavedMessageCardSkeleton />
+      <SavedMessageCardSkeleton />
+      <SavedMessageCardSkeleton />
+    </Grid>
+  );
+}

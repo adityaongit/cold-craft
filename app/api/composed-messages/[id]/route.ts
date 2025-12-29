@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB, Category, Template } from '@/lib/mongoose';
+import { connectDB, ComposedMessage } from '@/lib/mongoose';
 import { auth } from '@/lib/auth';
 import mongoose from 'mongoose';
 
-// GET /api/categories/[id] - Get category with templates
+// GET /api/composed-messages/[id] - Get a specific composed message
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,46 +18,31 @@ export async function GET(
 
     const { id } = await params;
 
-    const category = await Category.findOne({
+    const message = await ComposedMessage.findOne({
       _id: new mongoose.Types.ObjectId(id),
       userId: new mongoose.Types.ObjectId(session.user.id)
-    }).lean();
-
-    if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
-    }
-
-    // Get templates in this category
-    const templates = await Template.find({
-      categoryIds: category._id,
-      userId: new mongoose.Types.ObjectId(session.user.id),
-      isArchived: false
     })
-      .populate('tagIds', 'name color')
-      .sort({ updatedAt: -1 })
+      .populate('templateId', 'title content variables')
       .lean();
 
-    const categoryResponse = {
-      ...category,
-      id: category._id.toString(),
-      templates: templates.map((t: any) => ({
-        ...t,
-        id: t._id.toString(),
-        tags: t.tagIds || []
-      }))
-    };
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    }
 
-    return NextResponse.json(categoryResponse);
+    return NextResponse.json({
+      ...message,
+      id: message._id.toString()
+    });
   } catch (error) {
-    console.error('Error fetching category:', error);
+    console.error('Error fetching composed message:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch category' },
+      { error: 'Failed to fetch composed message' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/categories/[id] - Update category
+// PUT /api/composed-messages/[id] - Update a composed message
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -73,7 +58,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const category = await Category.findOneAndUpdate(
+    const message = await ComposedMessage.findOneAndUpdate(
       {
         _id: new mongoose.Types.ObjectId(id),
         userId: new mongoose.Types.ObjectId(session.user.id)
@@ -82,24 +67,24 @@ export async function PUT(
       { new: true }
     );
 
-    if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
     return NextResponse.json({
-      ...category.toObject(),
-      id: category._id.toString()
+      ...message.toObject(),
+      id: message._id.toString()
     });
   } catch (error) {
-    console.error('Error updating category:', error);
+    console.error('Error updating composed message:', error);
     return NextResponse.json(
-      { error: 'Failed to update category' },
+      { error: 'Failed to update composed message' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/categories/[id] - Delete category
+// DELETE /api/composed-messages/[id] - Delete a composed message
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -114,20 +99,20 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const category = await Category.findOneAndDelete({
+    const message = await ComposedMessage.findOneAndDelete({
       _id: new mongoose.Types.ObjectId(id),
       userId: new mongoose.Types.ObjectId(session.user.id)
     });
 
-    if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting category:', error);
+    console.error('Error deleting composed message:', error);
     return NextResponse.json(
-      { error: 'Failed to delete category' },
+      { error: 'Failed to delete composed message' },
       { status: 500 }
     );
   }

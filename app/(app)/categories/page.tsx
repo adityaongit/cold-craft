@@ -76,20 +76,9 @@ const InstagramIcon = () => (
 
 const ICON_OPTIONS = [
   { name: "LinkedIn", iconComponent: Linkedin, color: "#0A66C2" },
-  { name: "Gmail", iconComponent: GmailIcon, color: "#EA4335" },
-  { name: "Outlook", iconComponent: OutlookIcon, color: "#0078D4" },
   { name: "Email", iconComponent: Mail, color: "#6B7280" },
-  { name: "Slack", iconComponent: SlackIcon, color: "#4A154B" },
   { name: "WhatsApp", iconComponent: WhatsAppIcon, color: "#25D366" },
   { name: "Twitter/X", iconComponent: TwitterIcon, color: "#000000" },
-  { name: "Facebook", iconComponent: FacebookIcon, color: "#1877F2" },
-  { name: "Instagram", iconComponent: InstagramIcon, color: "#E4405F" },
-  { name: "SMS", iconComponent: MessageSquare, color: "#10B981" },
-  { name: "Telegram", iconComponent: Send, color: "#26A5E4" },
-  { name: "Discord", iconComponent: Hash, color: "#5865F2" },
-  { name: "Zoom", iconComponent: Video, color: "#2D8CFF" },
-  { name: "Website", iconComponent: Globe, color: "#8B5CF6" },
-  { name: "Other", iconComponent: AtSign, color: "#6366F1" },
 ];
 
 export default function CategoriesPage() {
@@ -101,7 +90,6 @@ export default function CategoriesPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    color: ICON_OPTIONS[0].color,
     icon: ICON_OPTIONS[0].name,
   });
 
@@ -135,24 +123,21 @@ export default function CategoriesPage() {
 
       if (res.ok) {
         setShowCreateForm(false);
-        setFormData({ name: "", description: "", color: ICON_OPTIONS[0].color, icon: ICON_OPTIONS[0].name });
+        setFormData({ name: "", description: "", icon: ICON_OPTIONS[0].name });
         fetchCategories();
         toaster.success({
-          title: "Category created",
-          description: "Your category has been created successfully",
+          title: "Category created successfully",
         });
       } else {
         const error = await res.json();
         toaster.error({
-          title: "Failed to create category",
-          description: error.error || "An error occurred while creating the category",
+          title: error.error || "Failed to create category",
         });
       }
     } catch (error) {
       console.error("Failed to create category:", error);
       toaster.error({
         title: "Failed to create category",
-        description: "An unexpected error occurred",
       });
     }
   }
@@ -167,24 +152,21 @@ export default function CategoriesPage() {
 
       if (res.ok) {
         setEditingId(null);
-        setFormData({ name: "", description: "", color: ICON_OPTIONS[0].color, icon: ICON_OPTIONS[0].name });
+        setFormData({ name: "", description: "", icon: ICON_OPTIONS[0].name });
         fetchCategories();
         toaster.success({
-          title: "Category updated",
-          description: "Your category has been updated successfully",
+          title: "Category updated successfully",
         });
       } else {
         const error = await res.json();
         toaster.error({
-          title: "Failed to update category",
-          description: error.error || "An error occurred while updating the category",
+          title: error.error || "Failed to update category",
         });
       }
     } catch (error) {
       console.error("Failed to update category:", error);
       toaster.error({
         title: "Failed to update category",
-        description: "An unexpected error occurred",
       });
     }
   }
@@ -192,30 +174,33 @@ export default function CategoriesPage() {
   async function confirmDelete() {
     if (!deleteId) return;
 
+    // Optimistically update UI
+    setCategories(categories.filter(cat => cat.id !== deleteId));
+    setDeleteId(null);
+
     try {
       const res = await fetch(`/api/categories/${deleteId}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
-        setDeleteId(null);
-        fetchCategories();
         toaster.success({
-          title: "Category deleted",
-          description: "The category has been deleted successfully",
+          title: "Category deleted successfully",
         });
       } else {
+        // Revert on error
+        fetchCategories();
         const error = await res.json();
         toaster.error({
-          title: "Failed to delete category",
-          description: error.error || "An error occurred while deleting the category",
+          title: error.error || "Failed to delete category",
         });
       }
     } catch (error) {
+      // Revert on error
+      fetchCategories();
       console.error("Failed to delete category:", error);
       toaster.error({
         title: "Failed to delete category",
-        description: "An unexpected error occurred",
       });
     }
   }
@@ -225,14 +210,13 @@ export default function CategoriesPage() {
     setFormData({
       name: category.name,
       description: category.description || "",
-      color: category.color,
       icon: category.icon,
     });
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setFormData({ name: "", description: "", color: ICON_OPTIONS[0].color, icon: ICON_OPTIONS[0].name });
+    setFormData({ name: "", description: "", icon: ICON_OPTIONS[0].name });
   }
 
   return (
@@ -250,11 +234,10 @@ export default function CategoriesPage() {
             borderRadius="md"
             fontWeight="500"
             gap={2}
-            size={{ base: "sm", md: "md" }}
+            w={{ base: "full", md: "auto" }}
           >
             <Plus size={16} />
-            <Text display={{ base: "none", sm: "block" }}>New Category</Text>
-            <Text display={{ base: "block", sm: "none" }}>New</Text>
+            New Category
           </Button>
         </HStack>
 
@@ -266,8 +249,6 @@ export default function CategoriesPage() {
             icon={Folder}
             title="No categories yet"
             description="Create your first category to organize your templates"
-            actionLabel="Create Category"
-            onAction={() => setShowCreateForm(true)}
           />
         ) : (
           <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={{ base: 3, md: 4 }}>
@@ -298,7 +279,7 @@ export default function CategoriesPage() {
                       borderColor={{ base: "gray.300", _dark: "gray.600" }}
                       _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                     />
-                    <SimpleGrid columns={5} gap={2}>
+                    <SimpleGrid columns={4} gap={2}>
                       {ICON_OPTIONS.map((option) => {
                         const IconComp = option.iconComponent;
                         const isSelected = formData.icon === option.name;
@@ -308,18 +289,18 @@ export default function CategoriesPage() {
                             p={2}
                             borderRadius="md"
                             borderWidth="2px"
-                            borderColor={isSelected ? option.color : "border.subtle"}
-                            bg={isSelected ? `${option.color}10` : "bg.surface"}
+                            borderColor={isSelected ? "border.emphasized" : "border.subtle"}
+                            bg={isSelected ? "bg.emphasized" : "bg.surface"}
                             cursor="pointer"
                             display="flex"
                             alignItems="center"
                             justifyContent="center"
-                            _hover={{ borderColor: option.color }}
-                            onClick={() => setFormData({ ...formData, icon: option.name, color: option.color })}
+                            _hover={{ borderColor: "border.emphasized" }}
+                            onClick={() => setFormData({ ...formData, icon: option.name })}
                             transition="all 0.2s"
                             title={option.name}
                           >
-                            <Box color={option.color}>
+                            <Box color="fg.default" w={6} h={6} display="flex" alignItems="center" justifyContent="center">
                               <IconComp />
                             </Box>
                           </Box>
@@ -349,7 +330,7 @@ export default function CategoriesPage() {
                     <HStack justify="space-between" align="start">
                       <HStack gap={3}>
                         <Box
-                          bg={category.color}
+                          bg="bg.muted"
                           p={2.5}
                           borderRadius="md"
                           display="flex"
@@ -358,7 +339,7 @@ export default function CategoriesPage() {
                           w={12}
                           h={12}
                         >
-                          <Box color="white" w={6} h={6}>
+                          <Box color="fg.default" w={6} h={6}>
                             {(() => {
                               const iconOption = ICON_OPTIONS.find(opt => opt.name === category.icon);
                               if (iconOption) {
@@ -400,7 +381,7 @@ export default function CategoriesPage() {
 
                     <HStack justify="space-between" pt={2} borderTopWidth="1px" borderColor="border.subtle">
                       <Badge variant="outline">
-                        {category._count.templates} template{category._count.templates !== 1 ? "s" : ""}
+                        {category.templateCount} template{category.templateCount !== 1 ? "s" : ""}
                       </Badge>
                       {category.children && category.children.length > 0 && (
                         <Badge variant="subtle">
@@ -467,28 +448,30 @@ export default function CategoriesPage() {
                   <Text fontSize="sm" fontWeight="medium" mb={2}>
                     Platform / Provider
                   </Text>
-                  <SimpleGrid columns={{ base: 3, sm: 5 }} gap={3}>
+                  <SimpleGrid columns={{ base: 2, sm: 4 }} gap={3}>
                     {ICON_OPTIONS.map((option) => {
                       const IconComp = option.iconComponent;
                       const isSelected = formData.icon === option.name;
                       return (
                         <VStack
                           key={option.name}
-                          p={3}
+                          p={4}
                           borderRadius="lg"
                           borderWidth="2px"
-                          borderColor={isSelected ? option.color : "border.subtle"}
-                          bg={isSelected ? `${option.color}10` : "bg.surface"}
+                          borderColor={isSelected ? "border.emphasized" : "border.subtle"}
+                          bg={isSelected ? "bg.emphasized" : "bg.surface"}
                           cursor="pointer"
-                          _hover={{ borderColor: option.color, transform: "translateY(-2px)" }}
-                          onClick={() => setFormData({ ...formData, icon: option.name, color: option.color })}
+                          _hover={{ borderColor: "border.emphasized", transform: "translateY(-2px)" }}
+                          onClick={() => setFormData({ ...formData, icon: option.name })}
                           transition="all 0.2s"
                           gap={2}
+                          justify="center"
+                          align="center"
                         >
-                          <Box color={option.color} w={6} h={6}>
+                          <Box color="fg.default" w={6} h={6} display="flex" alignItems="center" justifyContent="center">
                             <IconComp />
                           </Box>
-                          <Text fontSize="2xs" fontWeight="medium" textAlign="center" color={isSelected ? option.color : "fg.muted"}>
+                          <Text fontSize="2xs" fontWeight="medium" textAlign="center" color={isSelected ? "fg.emphasized" : "fg.muted"}>
                             {option.name}
                           </Text>
                         </VStack>
@@ -503,9 +486,11 @@ export default function CategoriesPage() {
                 variant="outline"
                 onClick={() => {
                   setShowCreateForm(false);
-                  setFormData({ name: "", description: "", color: ICON_OPTIONS[0].color, icon: ICON_OPTIONS[0].name });
+                  setFormData({ name: "", description: "", icon: ICON_OPTIONS[0].name });
                 }}
                 w={{ base: "full", sm: "auto" }}
+                borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
               >
                 Cancel
               </Button>
@@ -528,9 +513,23 @@ export default function CategoriesPage() {
       </DialogRoot>
 
       {/* Delete Confirmation Dialog */}
-      <DialogRoot open={!!deleteId} onOpenChange={(e) => !e.open && setDeleteId(null)}>
+      <DialogRoot
+        open={!!deleteId}
+        onOpenChange={(details) => {
+          if (!details.open) {
+            setDeleteId(null);
+          }
+        }}
+        placement="center"
+      >
         <DialogBackdrop />
-        <DialogContent>
+        <DialogContent
+          maxW={{ base: "90vw", sm: "md" }}
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+        >
           <DialogHeader>
             <DialogTitle>Delete Category</DialogTitle>
             <DialogCloseTrigger />
@@ -542,6 +541,8 @@ export default function CategoriesPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteId(null)}
+              borderColor={{ base: "gray.300", _dark: "gray.600" }}
+              _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
             >
               Cancel
             </Button>

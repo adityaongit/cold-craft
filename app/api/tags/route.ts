@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB, Tag, Template } from '@/lib/mongoose';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 
 // Validation schema for tag creation
 const createTagSchema = z.object({
@@ -12,25 +13,38 @@ const createTagSchema = z.object({
 // GET /api/tags - List all tags
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const tags = await prisma.tag.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      include: {
-        _count: {
-          select: { templates: true },
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
+    const tags = await Tag.find({
+      userId: new mongoose.Types.ObjectId(session.user.id)
+    })
+      .sort({ name: 1 })
+      .lean();
 
-    return NextResponse.json(tags);
+    // Add template counts
+    const tagsWithCounts = await Promise.all(
+      tags.map(async (tag: any) => {
+        const templateCount = await Template.countDocuments({
+          tagIds: tag._id
+        });
+
+        return {
+          ...tag,
+          id: tag._id.toString(),
+          _count: {
+            templates: templateCount
+          }
+        };
+      })
+    );
+
+    return NextResponse.json(tagsWithCounts);
   } catch (error) {
     console.error('Error fetching tags:', error);
     return NextResponse.json(
@@ -43,6 +57,8 @@ export async function GET(request: NextRequest) {
 // POST /api/tags - Create a new tag
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
@@ -52,15 +68,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createTagSchema.parse(body);
 
-    const tag = await prisma.tag.create({
-      data: {
-        userId: session.user.id,
-        name: validatedData.name,
-        color: validatedData.color,
-      },
+    // Check if tag with this name already exists
+    const existingTag = await Tag.findOne({
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      name: validatedData.name
     });
 
-    return NextResponse.json(tag, { status: 201 });
+    if (existingTag) {
+      return NextResponse.json(
+        { error: 'A tag with this name already exists' },
+        { status: 409 }
+      );
+    }
+
+    const tag = await Tag.create({
+      name: validatedData.name,
+      color: validatedData.color,
+      userId: new mongoose.Types.ObjectId(session.user.id)
+    });
+
+    const tagResponse = {
+      ...tag.toObject(),
+      id: tag._id.toString(),
+      _count: {
+        templates: 0
+      }
+    };
+
+    return NextResponse.json(tagResponse, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

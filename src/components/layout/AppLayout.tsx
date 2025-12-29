@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   User,
   LogOut,
+  Bookmark,
 } from "lucide-react";
 import { useColorMode } from "@/components/ui/color-mode";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -44,27 +45,22 @@ const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { label: "Templates", icon: FileText, href: "/templates" },
   { label: "Compose", icon: PenSquare, href: "/compose" },
+  { label: "Saved", icon: Bookmark, href: "/saved-messages" },
   { label: "Resumes", icon: FileUp, href: "/resumes" },
   { label: "Categories", icon: Folder, href: "/categories" },
   { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
-interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
-
 interface AppLayoutProps {
   children: React.ReactNode;
   title?: string;
-  breadcrumbs?: BreadcrumbItem[];
   subtitle?: string;
   showSearch?: boolean;
   showBackButton?: boolean;
   onBackClick?: () => void;
 }
 
-export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch = true, showBackButton = false, onBackClick }: AppLayoutProps) {
+export function AppLayout({ children, title, subtitle, showSearch = true, showBackButton = false, onBackClick }: AppLayoutProps) {
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
@@ -97,139 +93,56 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
         borderColor={{ base: "gray.200", _dark: "gray.700" }}
         bg="bg.canvas"
       >
-        {/* Breadcrumb OR Search */}
-        {(title || breadcrumbs) ? (
-          <>
-            <HStack gap={{ base: 2, md: 3 }}>
-              {/* Logo - Hidden on mobile */}
-              <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-                <Text
-                  fontSize={{ base: "xs", md: "sm" }}
-                  fontWeight="600"
-                  letterSpacing="-0.01em"
-                  cursor="pointer"
-                  _hover={{ opacity: 0.8 }}
-                  transition="opacity 0.15s"
-                  display={{ base: "none", md: "block" }}
-                >
-                  CC
-                </Text>
-              </Link>
+        <HStack gap={{ base: 2, md: 3 }} flex={1}>
+          {/* Logo */}
+          <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+            <Text
+              fontSize={{ base: "xl", md: "xl" }}
+              fontWeight="500"
+              fontFamily="var(--font-inter)"
+              letterSpacing="-0.02em"
+              cursor="pointer"
+              _hover={{ opacity: 0.8 }}
+              transition="opacity 0.15s"
+            >
+              PitchPad
+            </Text>
+          </Link>
+        </HStack>
 
-              {/* Slash separator */}
-              <Text display={{ base: "none", md: "block" }} opacity={0.15} fontSize="33px" fontWeight="300" lineHeight="47.1438px">/</Text>
-
-              {/* Breadcrumb items */}
-              {breadcrumbs ? (
-                <>
-                  {breadcrumbs.map((item, index) => {
-                    const isLast = index === breadcrumbs.length - 1;
-                    return (
-                      <React.Fragment key={index}>
-                        {item.href && !isLast ? (
-                          <Link href={item.href} style={{ textDecoration: 'none' }}>
-                            <Text
-                              fontSize={{ base: "xs", md: "sm" }}
-                              fontWeight={isLast ? "semibold" : "normal"}
-                              color={isLast ? "fg.default" : "fg.muted"}
-                              _hover={{ color: "fg.default" }}
-                              cursor="pointer"
-                              display={{ base: isLast ? "block" : "none", md: "block" }}
-                            >
-                              {item.label}
-                            </Text>
-                          </Link>
-                        ) : (
-                          <Text
-                            fontSize={{ base: "xs", md: "sm" }}
-                            fontWeight={isLast ? "semibold" : "normal"}
-                            color={isLast ? "fg.default" : "fg.muted"}
-                            display={{ base: isLast ? "block" : "none", md: "block" }}
-                          >
-                            {item.label}
-                          </Text>
-                        )}
-                        {!isLast && <Text display={{ base: "none", md: "block" }} opacity={0.15} fontSize="33px" fontWeight="300" lineHeight="47.1438px">/</Text>}
-                      </React.Fragment>
-                    );
-                  })}
-                </>
-              ) : (
-                <Text fontSize={{ base: "xs", md: "sm" }} fontWeight="semibold">
-                  {title}
-                </Text>
-              )}
-            </HStack>
-
-            <Box flex={1} />
-
-            {showSearch && (
-              <Box display={{ base: "none", md: "block" }}>
-                <HStack
-                  onClick={() => setSearchOpen(true)}
-                  cursor="pointer"
-                  bg="bg.muted"
-                  px={3}
-                  py={1.5}
-                  borderRadius="md"
-                  borderWidth="1px"
-                  borderColor={{ base: "gray.200", _dark: "gray.700" }}
-                  _hover={{ borderColor: { base: "gray.300", _dark: "gray.600" } }}
-                  transition="all 0.15s"
-                  gap={2}
-                  minW={{ base: "180px", sm: "200px", lg: "300px" }}
-                >
-                  <Icon color="fg.muted" fontSize="sm">
-                    <Search size={14} />
-                  </Icon>
-                  <Text fontSize="sm" color="fg.muted" flex={1}>
-                    Search...
-                  </Text>
-                  <HStack gap={0.5} display={{ base: "none", lg: "flex" }}>
-                    <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
-                      ⌘
-                    </Kbd>
-                    <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
-                      K
-                    </Kbd>
-                  </HStack>
-                </HStack>
-              </Box>
-            )}
-          </>
-        ) : showSearch ? (
-            <Box display="flex" justifyContent="center" maxW="600px" mx="auto">
-              <HStack
-                onClick={() => setSearchOpen(true)}
-                cursor="pointer"
-                bg="bg.muted"
-                px={4}
-                py={2}
-                borderRadius="md"
-                borderWidth="1px"
-                borderColor={{ base: "gray.200", _dark: "gray.700" }}
-                _hover={{ borderColor: { base: "gray.300", _dark: "gray.600" } }}
-                transition="all 0.15s"
-                gap={3}
-                minW={{ base: "250px", sm: "300px", md: "400px" }}
-              >
-                <Icon color="fg.muted" fontSize="sm">
-                  <Search size={14} />
-                </Icon>
-                <Text fontSize="sm" color="fg.muted" flex={1}>
-                  Search templates, categories...
-                </Text>
-                <HStack gap={0.5}>
-                  <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
-                    ⌘
-                  </Kbd>
-                  <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
-                    K
-                  </Kbd>
-                </HStack>
+        {showSearch && (
+          <Box display={{ base: "none", md: "block" }}>
+            <HStack
+              onClick={() => setSearchOpen(true)}
+              cursor="pointer"
+              bg="bg.muted"
+              px={3}
+              py={1.5}
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor={{ base: "gray.200", _dark: "gray.700" }}
+              _hover={{ borderColor: { base: "gray.300", _dark: "gray.600" } }}
+              transition="all 0.15s"
+              gap={2}
+              minW={{ base: "180px", sm: "200px", lg: "300px" }}
+            >
+              <Icon color="fg.muted" fontSize="sm">
+                <Search size={14} />
+              </Icon>
+              <Text fontSize="sm" color="fg.muted" flex={1}>
+                Search...
+              </Text>
+              <HStack gap={0.5} display={{ base: "none", lg: "flex" }}>
+                <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
+                  ⌘
+                </Kbd>
+                <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
+                  K
+                </Kbd>
               </HStack>
-            </Box>
-          ) : null}
+            </HStack>
+          </Box>
+        )}
 
         {/* Actions */}
         <Box flex={1} />
@@ -276,11 +189,11 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
                   {session?.user?.email}
                 </Text>
               </Box>
-              <MenuItem value="profile" onClick={() => router.push("/settings")}>
+              <MenuItem value="settings" onClick={() => router.push("/settings")}>
                 <Icon mr={2}>
-                  <User size={14} />
+                  <Settings size={14} />
                 </Icon>
-                Profile
+                Settings
               </MenuItem>
               <MenuSeparator />
               <MenuItem value="logout" onClick={handleSignOut} color="red.500">

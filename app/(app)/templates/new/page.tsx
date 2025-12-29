@@ -14,17 +14,17 @@ import { ArrowLeft, Save, Eye } from "lucide-react";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { TemplateForm, type TemplateFormData } from "@/components/templates/TemplateForm";
 import { TemplatePreview } from "@/components/templates/TemplatePreview";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function NewTemplatePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [formData, setFormData] = useState<TemplateFormData>({
     title: "",
     content: "",
     description: "",
-    platform: "OTHER",
-    tone: "PROFESSIONAL",
     categoryIds: [],
     tagIds: [],
   });
@@ -42,23 +42,24 @@ export default function NewTemplatePage() {
 
       if (res.ok) {
         const template = await res.json();
+
+        // Invalidate all template queries to refresh data everywhere
+        queryClient.invalidateQueries({ queryKey: ["templates"] });
+
         toaster.success({
-          title: "Template created",
-          description: "Your template has been created successfully",
+          title: "Template created successfully",
         });
         router.push(`/templates`);
       } else {
         const error = await res.json();
         toaster.error({
-          title: "Failed to create template",
-          description: error.error || "An error occurred while creating the template",
+          title: error.error || "Failed to create template",
         });
       }
     } catch (error) {
       console.error("Failed to create template:", error);
       toaster.error({
         title: "Failed to create template",
-        description: "An unexpected error occurred",
       });
     } finally {
       setSaving(false);
@@ -66,12 +67,7 @@ export default function NewTemplatePage() {
   }
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "Templates", href: "/templates" },
-        { label: "New Template" }
-      ]}
-    >
+    <AppLayout>
       <form onSubmit={handleSubmit}>
         <VStack align="stretch" gap={6}>
           {/* Header */}
@@ -118,8 +114,6 @@ export default function NewTemplatePage() {
         onClose={() => setShowPreview(false)}
         title={formData.title || "Untitled Template"}
         content={formData.content}
-        platform={formData.platform}
-        tone={formData.tone}
       />
 
       <Toaster />

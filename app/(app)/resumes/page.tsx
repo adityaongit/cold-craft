@@ -24,12 +24,14 @@ import { ResumesPageSkeleton } from "@/components/common/SkeletonLoaders";
 import { FileUp, Upload, Download, Star, Trash2, File, Clock } from "lucide-react";
 import { ResumeWithVersion } from "@/types";
 import { formatFileSize, formatRelativeTime } from "@/lib/utils";
+import { toaster, Toaster } from "@/components/ui/toaster";
 
 export default function ResumesPage() {
   const [resumes, setResumes] = useState<ResumeWithVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -81,31 +83,60 @@ export default function ResumesPage() {
         setFormData({ name: "", description: "", notes: "", isDefault: false });
         setSelectedFiles([]);
         fetchResumes();
+        toaster.success({
+          title: "Resume uploaded successfully",
+        });
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to upload resume");
+        toaster.error({
+          title: error.error || "Failed to upload resume",
+        });
       }
     } catch (error) {
       console.error("Failed to upload resume:", error);
-      alert("Failed to upload resume");
+      toaster.error({
+        title: "Failed to upload resume",
+      });
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this resume?")) return;
+    setDeleteId(id);
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return;
+
+    // Optimistically update UI
+    setResumes(resumes.filter(resume => resume.id !== deleteId));
+    setDeleteId(null);
 
     try {
-      const res = await fetch(`/api/resumes/${id}`, {
+      const res = await fetch(`/api/resumes/${deleteId}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
+        toaster.success({
+          title: "Resume deleted successfully",
+        });
+      } else {
+        // Revert on error
         fetchResumes();
+        const error = await res.json();
+        toaster.error({
+          title: error.error || "Failed to delete resume",
+        });
       }
     } catch (error) {
+      // Revert on error
+      fetchResumes();
       console.error("Failed to delete resume:", error);
+      toaster.error({
+        title: "Failed to delete resume",
+      });
     }
   }
 
@@ -131,10 +162,18 @@ export default function ResumesPage() {
         {/* Header */}
         <HStack justify="flex-end">
           <Button
-            colorScheme="brand"
             onClick={() => setShowUploadForm(!showUploadForm)}
+            bg={{ base: "white", _dark: "#f5f5f5" }}
+            color={{ base: "gray.900", _dark: "gray.900" }}
+            borderWidth="1px"
+            borderColor={{ base: "gray.300", _dark: "gray.300" }}
+            _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+            borderRadius="md"
+            fontWeight="500"
+            gap={2}
+            w={{ base: "full", md: "auto" }}
           >
-            <Upload size={18} />
+            <Upload size={16} />
             Upload Resume
           </Button>
         </HStack>
@@ -241,7 +280,12 @@ export default function ResumesPage() {
                 </Dialog.Body>
                 <Dialog.Footer>
                   <Dialog.ActionTrigger asChild>
-                    <Button variant="outline" disabled={uploading}>
+                    <Button
+                      variant="outline"
+                      disabled={uploading}
+                      borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                      _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+                    >
                       Cancel
                     </Button>
                   </Dialog.ActionTrigger>
@@ -268,8 +312,6 @@ export default function ResumesPage() {
             icon={FileUp}
             title="No resumes yet"
             description="Upload your first resume to get started. You can manage multiple versions and attach them to your outreach messages."
-            actionLabel="Upload Resume"
-            onAction={() => setShowUploadForm(true)}
           />
         ) : (
           <Grid templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }} gap={4}>
@@ -356,6 +398,8 @@ export default function ResumesPage() {
                           size="sm"
                           variant="outline"
                           asChild
+                          borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                          _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                         >
                           <a href={resume.currentVersion.filePath} download>
                             <Download size={14} />
@@ -381,9 +425,9 @@ export default function ResumesPage() {
                       </Icon>
                       <Text>Updated {formatRelativeTime(new Date(resume.updatedAt))}</Text>
                     </HStack>
-                    {resume._count && (
+                    {resume.versions && (
                       <Text>
-                        {resume._count.versions} version{resume._count.versions !== 1 ? "s" : ""}
+                        {resume.versions.length} version{resume.versions.length !== 1 ? "s" : ""}
                       </Text>
                     )}
                   </HStack>
@@ -393,6 +437,56 @@ export default function ResumesPage() {
           </Grid>
         )}
       </VStack>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog.Root
+        open={!!deleteId}
+        onOpenChange={(details) => {
+          if (!details.open) {
+            setDeleteId(null);
+          }
+        }}
+        placement="center"
+      >
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content
+            maxW={{ base: "90vw", sm: "md" }}
+            position="fixed"
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%)"
+          >
+            <Dialog.Header>
+              <Dialog.Title>Delete Resume</Dialog.Title>
+              <Dialog.CloseTrigger />
+            </Dialog.Header>
+            <Dialog.Body>
+              <Text>Are you sure you want to delete this resume? This action cannot be undone.</Text>
+            </Dialog.Body>
+            <Dialog.Footer gap={3}>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteId(null)}
+                borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                bg={{ base: "#dc2626", _dark: "#ef4444" }}
+                color="white"
+                _hover={{ bg: { base: "#b91c1c", _dark: "#dc2626" } }}
+              >
+                Delete
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
+
+      <Toaster />
     </AppLayout>
   );
 }

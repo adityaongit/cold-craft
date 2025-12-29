@@ -18,14 +18,64 @@ import {
 import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { copyToClipboard } from "@/lib/utils";
+import React from "react";
 
 interface TemplatePreviewProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   content: string;
-  platform?: string;
-  tone?: string;
+}
+
+// Function to render content with variables as badges
+function renderContentWithBadges(content: string) {
+  const variableRegex = /\{\{([^}:|]+)(?::([^}|]+))?(?:\|([^}]+))?\}\}/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = variableRegex.exec(content)) !== null) {
+    // Add text before the variable
+    if (match.index > lastIndex) {
+      const text = content.substring(lastIndex, match.index);
+      // Split by newlines to preserve them
+      text.split('\n').forEach((line, i, arr) => {
+        parts.push(line);
+        if (i < arr.length - 1) {
+          parts.push(<br key={`br-${match.index}-${i}`} />);
+        }
+      });
+    }
+
+    // Add the variable as a badge
+    const variableName = match[1].trim();
+    parts.push(
+      <Badge
+        key={`${match.index}-${variableName}`}
+        variant="subtle"
+        colorPalette="blue"
+        size="sm"
+        mx={0.5}
+      >
+        {variableName}
+      </Badge>
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    const text = content.substring(lastIndex);
+    text.split('\n').forEach((line, i, arr) => {
+      parts.push(line);
+      if (i < arr.length - 1) {
+        parts.push(<br key={`br-end-${i}`} />);
+      }
+    });
+  }
+
+  return parts.length > 0 ? parts : content;
 }
 
 export function TemplatePreview({
@@ -33,8 +83,6 @@ export function TemplatePreview({
   onClose,
   title,
   content,
-  platform,
-  tone,
 }: TemplatePreviewProps) {
   const [copied, setCopied] = useState(false);
 
@@ -64,21 +112,6 @@ export function TemplatePreview({
         </DialogHeader>
         <DialogBody>
           <VStack align="stretch" gap={4}>
-            {(platform || tone) && (
-              <HStack gap={2}>
-                {platform && (
-                  <Badge variant="subtle" colorPalette="gray" size="sm">
-                    {platform}
-                  </Badge>
-                )}
-                {tone && (
-                  <Badge variant="outline" colorPalette="gray" size="sm">
-                    {tone}
-                  </Badge>
-                )}
-              </HStack>
-            )}
-
             <Box
               bg="bg.surface"
               borderRadius="md"
@@ -87,11 +120,10 @@ export function TemplatePreview({
               p={4}
               fontSize="sm"
               lineHeight="1.7"
-              whiteSpace="pre-wrap"
               maxH="400px"
               overflowY="auto"
             >
-              {content || <Text color="fg.muted">No content to preview</Text>}
+              {content ? renderContentWithBadges(content) : <Text color="fg.muted">No content to preview</Text>}
             </Box>
 
             <HStack justify="space-between">

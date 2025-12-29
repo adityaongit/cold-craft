@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { extractVariables } from '@/lib/utils';
+import { connectDB, Template, UsageHistory } from '@/lib/mongoose';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 
 // Validation schema for template update
 const updateTemplateSchema = z.object({
   title: z.string().min(1).optional(),
   content: z.string().min(1).optional(),
   description: z.string().optional(),
-  platform: z.enum(['LINKEDIN', 'GMAIL', 'TWITTER', 'COLD_EMAIL', 'OTHER']).optional(),
-  tone: z.enum(['PROFESSIONAL', 'CASUAL', 'FRIENDLY', 'FORMAL', 'ENTHUSIASTIC']).optional(),
   categoryIds: z.array(z.string()).optional(),
   tagIds: z.array(z.string()).optional(),
   isFavorite: z.boolean().optional(),
@@ -23,6 +21,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
@@ -30,29 +30,14 @@ export async function GET(
     }
 
     const { id } = await params;
-    const template = await prisma.template.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
-      include: {
-        categories: true,
-        tags: true,
-        variables: {
-          orderBy: { order: 'asc' },
-        },
-        usageHistory: {
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            resume: true,
-          },
-        },
-        _count: {
-          select: { usageHistory: true },
-        },
-      },
-    });
+
+    const template = await Template.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      userId: new mongoose.Types.ObjectId(session.user.id)
+    })
+      .populate('categoryIds', 'name slug icon')
+      .populate('tagIds', 'name color')
+      .lean();
 
     if (!template) {
       return NextResponse.json(
@@ -61,7 +46,36 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(template);
+    // Get recent usage history
+    const usageHistory = await UsageHistory.find({
+      templateId: template._id
+    })
+      .populate('resumeId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Get total usage count
+    const usageHistoryCount = await UsageHistory.countDocuments({
+      templateId: template._id
+    });
+
+    const templateResponse = {
+      ...template,
+      id: template._id.toString(),
+      categories: template.categoryIds || [],
+      tags: template.tagIds || [],
+      usageHistory: usageHistory.map((usage: any) => ({
+        ...usage,
+        id: usage._id.toString(),
+        resume: usage.resumeId
+      })),
+      _count: {
+        usageHistory: usageHistoryCount
+      }
+    };
+
+    return NextResponse.json(templateResponse);
   } catch (error) {
     console.error('Error fetching template:', error);
     return NextResponse.json(
@@ -77,6 +91,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
@@ -88,12 +104,9 @@ export async function PUT(
     const validatedData = updateTemplateSchema.parse(body);
 
     // Check if template exists and belongs to user
-    const existingTemplate = await prisma.template.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
-      include: { variables: true },
+    const existingTemplate = await Template.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      userId: new mongoose.Types.ObjectId(session.user.id)
     });
 
     if (!existingTemplate) {
@@ -103,61 +116,38 @@ export async function PUT(
       );
     }
 
-    // If content is updated, re-extract variables
-    let variableUpdates = undefined;
-    let length = existingTemplate.length;
+    // Update template fields
+    if (validatedData.title) existingTemplate.title = validatedData.title;
+    if (validatedData.content) existingTemplate.content = validatedData.content;
+    if (validatedData.description !== undefined) existingTemplate.description = validatedData.description;
+    if (validatedData.isFavorite !== undefined) existingTemplate.isFavorite = validatedData.isFavorite;
+    if (validatedData.isArchived !== undefined) existingTemplate.isArchived = validatedData.isArchived;
 
-    if (validatedData.content) {
-      const newVariables = extractVariables(validatedData.content);
-
-      // Calculate new length
-      const wordCount = validatedData.content.trim().split(/\s+/).length;
-      if (wordCount < 100) length = 'SHORT';
-      else if (wordCount > 250) length = 'LONG';
-      else length = 'MEDIUM';
-
-      // Delete old variables and create new ones
-      variableUpdates = {
-        deleteMany: {},
-        create: newVariables,
-      };
+    if (validatedData.categoryIds) {
+      existingTemplate.categoryIds = validatedData.categoryIds.map(id => new mongoose.Types.ObjectId(id));
     }
 
-    // Update template
-    const template = await prisma.template.update({
-      where: { id },
-      data: {
-        ...(validatedData.title && { title: validatedData.title }),
-        ...(validatedData.content && { content: validatedData.content, length }),
-        ...(validatedData.description !== undefined && { description: validatedData.description }),
-        ...(validatedData.platform && { platform: validatedData.platform }),
-        ...(validatedData.tone && { tone: validatedData.tone }),
-        ...(validatedData.isFavorite !== undefined && { isFavorite: validatedData.isFavorite }),
-        ...(validatedData.isArchived !== undefined && { isArchived: validatedData.isArchived }),
-        ...(validatedData.categoryIds && {
-          categories: {
-            set: [],
-            connect: validatedData.categoryIds.map((id) => ({ id })),
-          },
-        }),
-        ...(validatedData.tagIds && {
-          tags: {
-            set: [],
-            connect: validatedData.tagIds.map((id) => ({ id })),
-          },
-        }),
-        ...(variableUpdates && { variables: variableUpdates }),
-      },
-      include: {
-        categories: true,
-        tags: true,
-        variables: {
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
+    if (validatedData.tagIds) {
+      existingTemplate.tagIds = validatedData.tagIds.map(id => new mongoose.Types.ObjectId(id));
+    }
 
-    return NextResponse.json(template);
+    // Note: Variables will be re-extracted automatically by the pre-save hook if content changed
+    await existingTemplate.save();
+
+    // Populate relations
+    await existingTemplate.populate([
+      { path: 'categoryIds', select: 'name slug icon' },
+      { path: 'tagIds', select: 'name color' }
+    ]);
+
+    const templateResponse = {
+      ...existingTemplate.toObject(),
+      id: existingTemplate._id.toString(),
+      categories: existingTemplate.categoryIds,
+      tags: existingTemplate.tagIds
+    };
+
+    return NextResponse.json(templateResponse);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -179,6 +169,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
@@ -188,11 +180,9 @@ export async function DELETE(
     const { id } = await params;
 
     // Verify template belongs to user before deleting
-    const template = await prisma.template.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
+    const template = await Template.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      userId: new mongoose.Types.ObjectId(session.user.id)
     });
 
     if (!template) {
@@ -202,18 +192,14 @@ export async function DELETE(
       );
     }
 
-    await prisma.template.delete({
-      where: { id },
-    });
+    await Template.deleteOne({ _id: template._id });
+
+    // Note: UsageHistory records are kept for analytics
+    // If you want to delete them too, uncomment:
+    // await UsageHistory.deleteMany({ templateId: template._id });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Template not found' },
-        { status: 404 }
-      );
-    }
     console.error('Error deleting template:', error);
     return NextResponse.json(
       { error: 'Failed to delete template' },

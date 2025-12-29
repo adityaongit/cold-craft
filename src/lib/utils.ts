@@ -1,4 +1,16 @@
-import { Variable, VarType } from '@prisma/client';
+import { VariableType } from '@/models/Template';
+
+type VarType = VariableType;
+
+interface Variable {
+  name: string;
+  displayName: string;
+  description?: string | null;
+  defaultValue?: string | null;
+  type: VarType;
+  isRequired: boolean;
+  order: number;
+}
 
 /**
  * Extract variables from template content
@@ -67,14 +79,14 @@ export function extractVariables(content: string): Omit<Variable, 'id' | 'templa
 function inferVariableType(name: string): VarType {
   const lower = name.toLowerCase();
 
-  if (lower.includes('email')) return 'EMAIL';
-  if (lower.includes('phone')) return 'PHONE';
-  if (lower.includes('url') || lower.includes('link') || lower.includes('website')) return 'URL';
-  if (lower.includes('date')) return 'DATE';
-  if (lower.includes('resume')) return 'RESUME_SELECT';
-  if (lower.includes('description') || lower.includes('bio') || lower.includes('summary')) return 'TEXTAREA';
+  if (lower.includes('email')) return VariableType.EMAIL;
+  if (lower.includes('phone')) return VariableType.PHONE;
+  if (lower.includes('url') || lower.includes('link') || lower.includes('website')) return VariableType.URL;
+  if (lower.includes('date')) return VariableType.DATE;
+  if (lower.includes('resume')) return VariableType.RESUME_SELECT;
+  if (lower.includes('description') || lower.includes('bio') || lower.includes('summary')) return VariableType.TEXTAREA;
 
-  return 'TEXT';
+  return VariableType.TEXT;
 }
 
 /**

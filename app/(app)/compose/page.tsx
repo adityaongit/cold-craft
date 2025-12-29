@@ -19,23 +19,50 @@ import {
   Portal,
   Center,
   createListCollection,
+  DialogRoot,
+  DialogBackdrop,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ComposePageSkeleton } from "@/components/common/SkeletonLoaders";
-import { Copy, Check, FileText, Sparkles } from "lucide-react";
+import { Copy, Check, FileText, Sparkles, Save } from "lucide-react";
 import { TemplateWithRelations } from "@/types";
 import { fillTemplate, copyToClipboard } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { toaster } from "@/components/ui/toaster";
+
+async function fetchTemplates() {
+  const res = await fetch("/api/templates?isArchived=false");
+  if (!res.ok) throw new Error("Failed to fetch templates");
+  const data = await res.json();
+  return data.data as TemplateWithRelations[];
+}
 
 function ComposePageContent() {
   const searchParams = useSearchParams();
   const templateId = searchParams?.get("templateId");
 
-  const [templates, setTemplates] = useState<TemplateWithRelations[]>([]);
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ["templates", { isArchived: false }],
+    queryFn: fetchTemplates,
+    staleTime: 0, // Always refetch to get latest data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateWithRelations | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [composedMessage, setComposedMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedResume, setSelectedResume] = useState("");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveTitle, setSaveTitle] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const templateCollection = useMemo(() => {
     return createListCollection({
@@ -46,14 +73,36 @@ function ComposePageContent() {
   }, [templates]);
 
   useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  useEffect(() => {
     if (templateId && templates.length > 0) {
       const template = templates.find((t) => t.id === templateId);
       if (template) {
-        handleTemplateSelect(template);
+        setSelectedTemplate(template);
+
+        // Check if there are prefilled variables from saved messages
+        const prefillData = sessionStorage.getItem('prefillVariables');
+        if (prefillData) {
+          try {
+            const prefillValues = JSON.parse(prefillData);
+            setVariableValues(prefillValues);
+            // Clear the storage after using it
+            sessionStorage.removeItem('prefillVariables');
+          } catch (error) {
+            console.error('Failed to parse prefill data:', error);
+            // Fall back to default values
+            const initialValues: Record<string, string> = {};
+            template.variables.forEach((v) => {
+              initialValues[v.name] = v.defaultValue || "";
+            });
+            setVariableValues(initialValues);
+          }
+        } else {
+          // Initialize with default values if no prefill data
+          const initialValues: Record<string, string> = {};
+          template.variables.forEach((v) => {
+            initialValues[v.name] = v.defaultValue || "";
+          });
+          setVariableValues(initialValues);
+        }
       }
     }
   }, [templateId, templates]);
@@ -64,18 +113,6 @@ function ComposePageContent() {
       setComposedMessage(filled);
     }
   }, [selectedTemplate, variableValues]);
-
-  async function fetchTemplates() {
-    try {
-      const res = await fetch("/api/templates?isArchived=false");
-      if (res.ok) {
-        const data = await res.json();
-        setTemplates(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch templates:", error);
-    }
-  }
 
   function handleTemplateSelect(template: TemplateWithRelations) {
     setSelectedTemplate(template);
@@ -103,10 +140,44 @@ function ComposePageContent() {
             templateId: selectedTemplate.id,
             resumeId: selectedResume || undefined,
             variableValues,
-            platform: selectedTemplate.platform,
           }),
         });
       }
+    }
+  }
+
+  async function handleSave() {
+    if (!saveTitle.trim()) {
+      toaster.error({ title: "Please enter a title" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/composed-messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: saveTitle.trim(),
+          content: composedMessage,
+          templateId: selectedTemplate?.id,
+          variableValues,
+        }),
+      });
+
+      if (res.ok) {
+        toaster.success({ title: "Message saved successfully" });
+        setShowSaveDialog(false);
+        setSaveTitle("");
+      } else {
+        const error = await res.json();
+        toaster.error({ title: error.error || "Failed to save message" });
+      }
+    } catch (error) {
+      console.error("Failed to save message:", error);
+      toaster.error({ title: "Failed to save message" });
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -119,7 +190,11 @@ function ComposePageContent() {
         gap={4}
         h="full"
       >
-        {/* Left Panel: Template & Variables */}
+        {isLoading ? (
+          <ComposePageSkeleton />
+        ) : (
+          <>
+      {/* Left Panel: Template & Variables */}
         <Card.Root
           bg="bg.panel"
           borderWidth="1px"
@@ -143,11 +218,13 @@ function ComposePageContent() {
                   const template = templates.find((t) => t.id === e.value[0]);
                   if (template) handleTemplateSelect(template);
                 }}
-                borderColor={{ base: "gray.300", _dark: "gray.400" }}
-                _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
               >
                 <Select.HiddenSelect />
-                <Select.Control>
+                <Select.Control
+                  borderWidth="1px"
+                  borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                  _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+                >
                   <Select.Trigger>
                     <Select.ValueText placeholder="Choose a template..." />
                   </Select.Trigger>
@@ -162,14 +239,9 @@ function ComposePageContent() {
                         <Select.Item key={template.id} item={template}>
                           <VStack align="start" gap={1}>
                             <Text fontWeight="medium">{template.title}</Text>
-                            <HStack gap={2}>
-                              <Badge size="xs" variant="subtle" colorPalette="gray">
-                                {template.platform}
-                              </Badge>
-                              <Badge size="xs" variant="outline" colorPalette="gray">
-                                {template.tone}
-                              </Badge>
-                            </HStack>
+                            {template.description && (
+                              <Text fontSize="xs" color="fg.muted">{template.description}</Text>
+                            )}
                           </VStack>
                           <Select.ItemIndicator />
                         </Select.Item>
@@ -191,7 +263,7 @@ function ComposePageContent() {
                   gap={4}
                 >
                   {selectedTemplate.variables.map((variable) => (
-                    <Box key={variable.id}>
+                    <Box key={variable.name}>
                       <Text fontSize="sm" fontWeight="medium" mb={2}>
                         {variable.displayName}
                         {variable.isRequired && (
@@ -268,39 +340,41 @@ function ComposePageContent() {
           overflow="hidden"
         >
           <VStack align="stretch" gap={4} h="full">
-            {/* Header with Copy Button */}
+            {/* Header with Action Buttons */}
             <HStack justify="space-between" flexShrink={0}>
-              <HStack gap={3}>
-                <Text fontWeight="semibold" fontSize="md">
-                  Preview
-                </Text>
-                {selectedTemplate && (
-                  <HStack gap={2}>
-                    <Badge size="xs" variant="subtle" colorPalette="gray">
-                      {selectedTemplate.platform}
-                    </Badge>
-                    <Badge size="xs" variant="outline" colorPalette="gray">
-                      {selectedTemplate.tone}
-                    </Badge>
-                  </HStack>
-                )}
+              <Text fontWeight="semibold" fontSize="md">
+                Preview
+              </Text>
+              <HStack gap={2}>
+                <Button
+                  onClick={() => setShowSaveDialog(true)}
+                  disabled={!composedMessage}
+                  variant="outline"
+                  size="sm"
+                  gap={2}
+                  borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                  _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+                >
+                  <Save size={14} />
+                  Save
+                </Button>
+                <Button
+                  onClick={handleCopy}
+                  disabled={!composedMessage || !selectedTemplate}
+                  bg={{ base: "white", _dark: "#f5f5f5" }}
+                  color={{ base: "gray.900", _dark: "gray.900" }}
+                  borderWidth="1px"
+                  borderColor={{ base: "gray.300", _dark: "gray.300" }}
+                  _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+                  borderRadius="md"
+                  fontWeight="500"
+                  size="sm"
+                  gap={2}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? "Copied!" : "Copy"}
+                </Button>
               </HStack>
-              <Button
-                onClick={handleCopy}
-                disabled={!composedMessage || !selectedTemplate}
-                bg={{ base: "white", _dark: "#f5f5f5" }}
-                color={{ base: "gray.900", _dark: "gray.900" }}
-                borderWidth="1px"
-                borderColor={{ base: "gray.300", _dark: "gray.300" }}
-                _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
-                borderRadius="md"
-                fontWeight="500"
-                size="sm"
-                gap={2}
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? "Copied!" : "Copy Message"}
-              </Button>
             </HStack>
 
             {/* Scrollable Preview */}
@@ -332,7 +406,86 @@ function ComposePageContent() {
             </HStack>
           </VStack>
         </Card.Root>
+        </>
+        )}
       </Grid>
+
+      {/* Save Dialog */}
+      <DialogRoot
+        open={showSaveDialog}
+        onOpenChange={(e) => {
+          if (!e.open) {
+            setShowSaveDialog(false);
+            setSaveTitle("");
+          }
+        }}
+        placement="center"
+      >
+        <DialogBackdrop />
+        <DialogContent
+          maxW={{ base: "90vw", sm: "md" }}
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+        >
+          <DialogHeader>
+            <DialogTitle>Save Composed Message</DialogTitle>
+            <DialogCloseTrigger />
+          </DialogHeader>
+          <DialogBody>
+            <VStack align="stretch" gap={4}>
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" mb={2}>
+                  Title *
+                </Text>
+                <Input
+                  value={saveTitle}
+                  onChange={(e) => setSaveTitle(e.target.value)}
+                  placeholder="e.g., LinkedIn Message for Google PM Role"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSave();
+                    }
+                  }}
+                />
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="fg.muted">
+                  Save this composed message to access and reuse it later.
+                </Text>
+              </Box>
+            </VStack>
+          </DialogBody>
+          <DialogFooter gap={3}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowSaveDialog(false);
+                setSaveTitle("");
+              }}
+              borderColor={{ base: "gray.300", _dark: "gray.600" }}
+              _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              loading={saving}
+              loadingText="Saving..."
+              bg={{ base: "white", _dark: "#f5f5f5" }}
+              color={{ base: "gray.900", _dark: "gray.900" }}
+              borderWidth="1px"
+              borderColor={{ base: "gray.300", _dark: "gray.300" }}
+              _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+            >
+              Save Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </AppLayout>
   );
 }

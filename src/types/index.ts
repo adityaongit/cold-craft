@@ -1,27 +1,23 @@
-import { Category, Template, Tag, Variable, Resume, ResumeVersion, GlobalVariable, Platform, Tone, Length, VarType, Contact } from '@prisma/client';
+import { ITemplate, ICategory, ITag, IResume, TemplateLength, VariableType } from '../models';
+import mongoose from 'mongoose';
 
 // Template with relations
-export interface TemplateWithRelations extends Template {
-  categories: Category[];
-  tags: Tag[];
-  variables: Variable[];
+export interface TemplateWithRelations extends ITemplate {
+  categories: ICategory[];
+  tags: ITag[];
+  usageHistoryCount: number;
 }
 
 // Category with count and children
-export interface CategoryWithCount extends Category {
-  _count: {
-    templates: number;
-  };
+export interface CategoryWithCount extends ICategory {
+  templateCount: number;
   children?: CategoryWithCount[];
 }
 
-// Resume with current version
-export interface ResumeWithVersion extends Resume {
-  currentVersion?: ResumeVersion;
-  versions?: ResumeVersion[];
-  _count?: {
-    versions: number;
-  };
+// Resume with version details
+export interface ResumeWithVersion extends IResume {
+  currentVersion: any;
+  latestVersion: number;
 }
 
 // API Response types
@@ -39,23 +35,16 @@ export interface UsageStats {
   totalMessages: number;
   thisWeek: number;
   thisMonth: number;
-  topTemplates: { template: Template; count: number }[];
-  platformBreakdown: { platform: Platform; count: number }[];
-  successRate?: number;
+  topTemplates: { template: { id: string; title: string }; count: number }[];
+  successRate: number | null;
 }
 
-// Re-export Prisma types
+// Re-export model types
 export type {
-  Category,
-  Template,
-  Tag,
-  Variable,
-  Resume,
-  ResumeVersion,
-  GlobalVariable,
-  Platform,
-  Tone,
-  Length,
-  VarType,
-  Contact,
+  ICategory as Category,
+  ITemplate as Template,
+  ITag as Tag,
+  IResume as Resume,
+  TemplateLength as Length,
+  VariableType as VarType,
 };

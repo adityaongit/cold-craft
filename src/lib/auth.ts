@@ -1,12 +1,15 @@
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { MongoClient } from "mongodb";
 
-const prisma = new PrismaClient();
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/cold-text";
+
+const client = new MongoClient(MONGODB_URI);
+const db = client.db();
 
 export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
+  database: mongodbAdapter(db, {
+    client
   }),
   trustedOrigins: [
     "http://localhost:3000",

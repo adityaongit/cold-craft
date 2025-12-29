@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { extractVariables } from '@/lib/utils';
+import { connectDB, Template } from '@/lib/mongoose';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 
 // Validation schema for template creation
 const createTemplateSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   content: z.string().min(1, 'Content is required'),
   description: z.string().optional(),
-  platform: z.enum(['LINKEDIN', 'GMAIL', 'TWITTER', 'COLD_EMAIL', 'OTHER']).default('OTHER'),
-  tone: z.enum(['PROFESSIONAL', 'CASUAL', 'FRIENDLY', 'FORMAL', 'ENTHUSIASTIC']).default('PROFESSIONAL'),
   categoryIds: z.array(z.string()).optional(),
   tagIds: z.array(z.string()).optional(),
 });
@@ -18,6 +16,8 @@ const createTemplateSchema = z.object({
 // GET /api/templates - List templates with filters
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
@@ -29,8 +29,6 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
-    const platform = searchParams.get('platform');
-    const tone = searchParams.get('tone');
     const categoryId = searchParams.get('categoryId');
     const tagId = searchParams.get('tagId');
     const isFavorite = searchParams.get('isFavorite') === 'true';
@@ -38,59 +36,44 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause with userId filter
-    const where: any = {
-      userId: session.user.id,
+    // Build MongoDB query
+    const query: any = {
+      userId: new mongoose.Types.ObjectId(session.user.id),
       isArchived,
       ...(isFavorite && { isFavorite: true }),
-      ...(platform && { platform }),
-      ...(tone && { tone }),
-      ...(search && {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-          { content: { contains: search, mode: 'insensitive' } },
-        ],
-      }),
-      ...(categoryId && {
-        categories: {
-          some: {
-            id: categoryId,
-          },
-        },
-      }),
-      ...(tagId && {
-        tags: {
-          some: {
-            id: tagId,
-          },
-        },
-      }),
+      ...(categoryId && { categoryIds: new mongoose.Types.ObjectId(categoryId) }),
+      ...(tagId && { tagIds: new mongoose.Types.ObjectId(tagId) })
     };
+
+    // Add text search if provided
+    if (search) {
+      query.$text = { $search: search };
+    }
 
     // Get templates with relations
     const [templates, total] = await Promise.all([
-      prisma.template.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          categories: true,
-          tags: true,
-          variables: {
-            orderBy: { order: 'asc' },
-          },
-          _count: {
-            select: { usageHistory: true },
-          },
-        },
-        orderBy: { updatedAt: 'desc' },
-      }),
-      prisma.template.count({ where }),
+      Template.find(query)
+        .populate('categoryIds', 'name slug icon')
+        .populate('tagIds', 'name color')
+        .skip(skip)
+        .limit(limit)
+        .sort({ updatedAt: -1 })
+        .lean(),
+      Template.countDocuments(query)
     ]);
 
+    // Map the populated fields to match frontend expectations
+    const templatesWithRelations = templates.map((template: any) => ({
+      ...template,
+      id: template._id.toString(),
+      categories: template.categoryIds || [],
+      tags: template.tagIds || [],
+      // Variables are already embedded
+      usageHistoryCount: 0 // Will be calculated if needed
+    }));
+
     const response = NextResponse.json({
-      data: templates,
+      data: templatesWithRelations,
       pagination: {
         total,
         page,
@@ -115,6 +98,8 @@ export async function GET(request: NextRequest) {
 // POST /api/templates - Create a new template
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
@@ -124,49 +109,36 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createTemplateSchema.parse(body);
 
-    // Extract variables from content
-    const variables = extractVariables(validatedData.content);
-
-    // Calculate length
-    const wordCount = validatedData.content.trim().split(/\s+/).length;
-    let length: 'SHORT' | 'MEDIUM' | 'LONG' = 'MEDIUM';
-    if (wordCount < 100) length = 'SHORT';
-    else if (wordCount > 250) length = 'LONG';
-
-    // Create template with relations
-    const template = await prisma.template.create({
-      data: {
-        title: validatedData.title,
-        content: validatedData.content,
-        description: validatedData.description,
-        platform: validatedData.platform,
-        tone: validatedData.tone,
-        length,
-        userId: session.user.id,
-        categories: validatedData.categoryIds
-          ? {
-              connect: validatedData.categoryIds.map((id) => ({ id })),
-            }
-          : undefined,
-        tags: validatedData.tagIds
-          ? {
-              connect: validatedData.tagIds.map((id) => ({ id })),
-            }
-          : undefined,
-        variables: {
-          create: variables,
-        },
-      },
-      include: {
-        categories: true,
-        tags: true,
-        variables: {
-          orderBy: { order: 'asc' },
-        },
-      },
+    // Create template with Mongoose
+    // Note: Variables will be auto-extracted by the pre-save hook
+    // Length will be auto-calculated by the pre-save hook
+    const template = await Template.create({
+      title: validatedData.title,
+      content: validatedData.content,
+      description: validatedData.description,
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      categoryIds: validatedData.categoryIds
+        ? validatedData.categoryIds.map(id => new mongoose.Types.ObjectId(id))
+        : [],
+      tagIds: validatedData.tagIds
+        ? validatedData.tagIds.map(id => new mongoose.Types.ObjectId(id))
+        : []
     });
 
-    return NextResponse.json(template, { status: 201 });
+    // Populate relations before returning
+    await template.populate([
+      { path: 'categoryIds', select: 'name slug icon' },
+      { path: 'tagIds', select: 'name color' }
+    ]);
+
+    const templateResponse = {
+      ...template.toObject(),
+      id: template._id.toString(),
+      categories: template.categoryIds,
+      tags: template.tagIds
+    };
+
+    return NextResponse.json(templateResponse, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

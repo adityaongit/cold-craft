@@ -108,7 +108,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           title: t.title,
           description: t.description,
           href: `/templates/${t.id}`,
-          badge: t.platform,
         }));
         setTemplates(templateResults);
       }
@@ -237,16 +236,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       <ResultIcon size={18} />
                     </Icon>
                     <VStack align="start" gap={0} flex={1}>
-                      <HStack justify="space-between" w="full">
-                        <Text fontWeight="medium" fontSize="sm">
-                          {result.title}
-                        </Text>
-                        {result.badge && (
-                          <Badge size="sm" variant="subtle" colorScheme="gray">
-                            {result.badge}
-                          </Badge>
-                        )}
-                      </HStack>
+                      <Text fontWeight="medium" fontSize="sm">
+                        {result.title}
+                      </Text>
                       {result.description && (
                         <Text fontSize="xs" color="fg.muted">
                           {result.description}

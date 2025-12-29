@@ -1,87 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { connectDB, Template, UsageHistory } from '@/lib/mongoose';
 import { auth } from '@/lib/auth';
-import { z } from 'zod';
-
-// Validation schema for usage tracking
-const createUsageSchema = z.object({
-  templateId: z.string(),
-  resumeId: z.string().optional(),
-  variableValues: z.record(z.string(), z.string()),
-  platform: z.enum(['LINKEDIN', 'GMAIL', 'TWITTER', 'COLD_EMAIL', 'OTHER']),
-  recipientName: z.string().optional(),
-  companyName: z.string().optional(),
-  notes: z.string().optional(),
-});
+import mongoose from 'mongoose';
 
 // POST /api/usage - Track template usage
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
+    await connectDB();
+
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const validatedData = createUsageSchema.parse(body);
 
-    // Verify template belongs to user
-    const template = await prisma.template.findFirst({
-      where: {
-        id: validatedData.templateId,
-        userId: session.user.id,
-      },
+    const usage = await UsageHistory.create({
+      templateId: new mongoose.Types.ObjectId(body.templateId),
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      resumeId: body.resumeId ? new mongoose.Types.ObjectId(body.resumeId) : undefined,
+      variableValues: body.variableValues || {},
+      recipientName: body.recipientName,
+      companyName: body.companyName,
+      success: body.success,
+      notes: body.notes
     });
 
-    if (!template) {
-      return NextResponse.json(
-        { error: 'Template not found or access denied' },
-        { status: 404 }
-      );
-    }
+    // Note: Template usageCount is auto-incremented by UsageHistory post-save hook
 
-    // Create usage history entry
-    const usage = await prisma.usageHistory.create({
-      data: {
-        templateId: validatedData.templateId,
-        resumeId: validatedData.resumeId,
-        variableValues: validatedData.variableValues,
-        platform: validatedData.platform,
-        recipientName: validatedData.recipientName,
-        companyName: validatedData.companyName,
-        notes: validatedData.notes,
-      },
-      include: {
-        template: true,
-        resume: {
-          include: {
-            currentVersion: true,
-          },
-        },
-      },
-    });
-
-    // Update template usage count and last used date
-    await prisma.template.update({
-      where: { id: validatedData.templateId },
-      data: {
-        usageCount: { increment: 1 },
-        lastUsedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json(usage, { status: 201 });
+    return NextResponse.json({
+      ...usage.toObject(),
+      id: usage._id.toString()
+    }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Error tracking usage:', error);
+    console.error('Error creating usage record:', error);
     return NextResponse.json(
-      { error: 'Failed to track usage' },
+      { error: 'Failed to create usage record' },
       { status: 500 }
     );
   }

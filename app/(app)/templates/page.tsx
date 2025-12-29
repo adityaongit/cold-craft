@@ -8,10 +8,15 @@ import {
   VStack,
   Text,
   Button,
-  Select,
   Tabs,
-  Portal,
-  createListCollection,
+  DialogRoot,
+  DialogBackdrop,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TemplateCard } from "@/components/templates/TemplateCard";
@@ -22,32 +27,8 @@ import { useRouter } from "next/navigation";
 import { TemplateWithRelations } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const platformOptions = createListCollection({
-  items: [
-    { label: "All Platforms", value: "" },
-    { label: "LinkedIn", value: "LINKEDIN" },
-    { label: "Gmail", value: "GMAIL" },
-    { label: "Twitter", value: "TWITTER" },
-    { label: "Cold Email", value: "COLD_EMAIL" },
-    { label: "Other", value: "OTHER" },
-  ],
-});
-
-const toneOptions = createListCollection({
-  items: [
-    { label: "All Tones", value: "" },
-    { label: "Professional", value: "PROFESSIONAL" },
-    { label: "Casual", value: "CASUAL" },
-    { label: "Friendly", value: "FRIENDLY" },
-    { label: "Formal", value: "FORMAL" },
-    { label: "Enthusiastic", value: "ENTHUSIASTIC" },
-  ],
-});
-
-async function fetchTemplates(filter: { platform: string; tone: string; isFavorite: boolean }) {
+async function fetchTemplates(filter: { isFavorite: boolean }) {
   const params = new URLSearchParams();
-  if (filter.platform) params.set("platform", filter.platform);
-  if (filter.tone) params.set("tone", filter.tone);
   if (filter.isFavorite) params.set("isFavorite", "true");
 
   const res = await fetch(`/api/templates?${params.toString()}`);
@@ -60,10 +41,9 @@ export default function TemplatesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState({
-    platform: "",
-    tone: "",
     isFavorite: false,
   });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: templates = [], isLoading: loading } = useQuery({
     queryKey: ["templates", filter],
@@ -80,8 +60,62 @@ export default function TemplatesPage() {
       if (!res.ok) throw new Error("Failed to toggle favorite");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
+    onMutate: async ({ id, isFavorite }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["templates"] });
+
+      // Get all templates query data for rollback
+      const allQueriesData = queryClient.getQueriesData({ queryKey: ["templates"] });
+
+      // Update "All Templates" cache - just update the isFavorite property
+      queryClient.setQueryData(["templates", { isFavorite: false }], (old: TemplateWithRelations[] | undefined) => {
+        if (!old) return old;
+        return old.map((template) =>
+          template.id === id ? { ...template, isFavorite } : template
+        );
+      });
+
+      // Update "Favorites" cache - add or remove the template
+      queryClient.setQueryData(["templates", { isFavorite: true }], (old: TemplateWithRelations[] | undefined) => {
+        if (!old) return old;
+
+        if (isFavorite) {
+          // Adding to favorites - check if already exists
+          const exists = old.some((t) => t.id === id);
+          if (exists) {
+            return old.map((template) =>
+              template.id === id ? { ...template, isFavorite } : template
+            );
+          } else {
+            // Get the template from all templates cache to add it
+            const allTemplates = queryClient.getQueryData(["templates", { isFavorite: false }]) as TemplateWithRelations[] | undefined;
+            const templateToAdd = allTemplates?.find((t) => t.id === id);
+            if (templateToAdd) {
+              return [...old, { ...templateToAdd, isFavorite: true }];
+            }
+          }
+        } else {
+          // Removing from favorites
+          return old.filter((template) => template.id !== id);
+        }
+
+        return old;
+      });
+
+      // Return context with previous values
+      return { allQueriesData };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error - restore all previous query states
+      if (context?.allQueriesData) {
+        context.allQueriesData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
+      // Only invalidate usage stats, not templates (already optimistically updated)
+      queryClient.invalidateQueries({ queryKey: ["usage-stats"] });
     },
   });
 
@@ -102,8 +136,13 @@ export default function TemplatesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this template?")) return;
-    deleteMutation.mutate(id);
+    setDeleteId(id);
+  }
+
+  function confirmDelete() {
+    if (!deleteId) return;
+    deleteMutation.mutate(deleteId);
+    setDeleteId(null);
   }
 
   return (
@@ -121,84 +160,21 @@ export default function TemplatesPage() {
               </Tabs.Trigger>
             </Tabs.List>
 
-            <HStack gap={3} flexDirection={{ base: "column", md: "row" }} w={{ base: "full", md: "auto" }}>
-              <Button
-                onClick={() => router.push("/templates/new")}
-                bg={{ base: "white", _dark: "#f5f5f5" }}
-                color={{ base: "gray.900", _dark: "gray.900" }}
-                borderWidth="1px"
-                borderColor={{ base: "gray.300", _dark: "gray.300" }}
-                _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
-                borderRadius="md"
-                fontWeight="500"
-                gap={2}
-                w={{ base: "full", md: "auto" }}
-              >
-                <Plus size={16} />
-                New Template
-              </Button>
-              <Select.Root
-                collection={platformOptions}
-                value={[filter.platform]}
-                onValueChange={(e) => setFilter({ ...filter, platform: e.value[0] })}
-                width={{ base: "full", md: "200px" }}
-                borderColor={{ base: "gray.300", _dark: "gray.400" }}
-                _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
-              >
-                <Select.HiddenSelect />
-                <Select.Control>
-                  <Select.Trigger>
-                    <Select.ValueText placeholder="Platform" />
-                  </Select.Trigger>
-                  <Select.IndicatorGroup>
-                    <Select.Indicator />
-                  </Select.IndicatorGroup>
-                </Select.Control>
-                <Portal>
-                  <Select.Positioner>
-                    <Select.Content>
-                      {platformOptions.items.map((item) => (
-                        <Select.Item key={item.value} item={item}>
-                          {item.label}
-                          <Select.ItemIndicator />
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Portal>
-              </Select.Root>
-
-              <Select.Root
-                collection={toneOptions}
-                value={[filter.tone]}
-                onValueChange={(e) => setFilter({ ...filter, tone: e.value[0] })}
-                width={{ base: "full", md: "200px" }}
-                borderColor={{ base: "gray.300", _dark: "gray.400" }}
-                _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
-              >
-                <Select.HiddenSelect />
-                <Select.Control>
-                  <Select.Trigger>
-                    <Select.ValueText placeholder="Tone" />
-                  </Select.Trigger>
-                  <Select.IndicatorGroup>
-                    <Select.Indicator />
-                  </Select.IndicatorGroup>
-                </Select.Control>
-                <Portal>
-                  <Select.Positioner>
-                    <Select.Content>
-                      {toneOptions.items.map((item) => (
-                        <Select.Item key={item.value} item={item}>
-                          {item.label}
-                          <Select.ItemIndicator />
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Portal>
-              </Select.Root>
-            </HStack>
+            <Button
+              onClick={() => router.push("/templates/new")}
+              bg={{ base: "white", _dark: "#f5f5f5" }}
+              color={{ base: "gray.900", _dark: "gray.900" }}
+              borderWidth="1px"
+              borderColor={{ base: "gray.300", _dark: "gray.300" }}
+              _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+              borderRadius="md"
+              fontWeight="500"
+              gap={2}
+              w={{ base: "full", md: "auto" }}
+            >
+              <Plus size={16} />
+              New Template
+            </Button>
           </HStack>
         </Tabs.Root>
 
@@ -210,8 +186,6 @@ export default function TemplatesPage() {
             icon={FileText}
             title="No templates yet"
             description="Create your first template to get started with PitchPad"
-            actionLabel="Create Template"
-            onAction={() => router.push("/templates/new")}
           />
         ) : (
           <Grid
@@ -231,6 +205,52 @@ export default function TemplatesPage() {
           </Grid>
         )}
       </VStack>
+
+      {/* Delete Confirmation Dialog */}
+      <DialogRoot
+        open={!!deleteId}
+        onOpenChange={(details) => {
+          if (!details.open) {
+            setDeleteId(null);
+          }
+        }}
+        placement="center"
+      >
+        <DialogBackdrop />
+        <DialogContent
+          maxW={{ base: "90vw", sm: "md" }}
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+        >
+          <DialogHeader>
+            <DialogTitle>Delete Template</DialogTitle>
+            <DialogCloseTrigger />
+          </DialogHeader>
+          <DialogBody>
+            <Text>Are you sure you want to delete this template? This action cannot be undone.</Text>
+          </DialogBody>
+          <DialogFooter gap={3}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteId(null)}
+              borderColor={{ base: "gray.300", _dark: "gray.600" }}
+              _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              bg={{ base: "#dc2626", _dark: "#ef4444" }}
+              color="white"
+              _hover={{ bg: { base: "#b91c1c", _dark: "#dc2626" } }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </AppLayout>
   );
 }

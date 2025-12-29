@@ -109,6 +109,8 @@ export default function LoginPage() {
                   onClick={handleGoogleSignIn}
                   loading={googleLoading}
                   disabled={googleLoading || loading}
+                  borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                  _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -158,6 +160,8 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                         autoComplete="email"
+                        borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                        _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                       />
                     </VStack>
 
@@ -172,6 +176,8 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         autoComplete="current-password"
+                        borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                        _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                       />
                     </VStack>
 

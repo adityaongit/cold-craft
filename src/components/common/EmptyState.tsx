@@ -19,7 +19,13 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <VStack gap={4} py={12} textAlign="center">
+    <VStack
+      gap={4}
+      textAlign="center"
+      minH="calc(100vh - 300px)"
+      justify="center"
+      align="center"
+    >
       <Icon fontSize="4xl" color="fg.muted">
         <IconComponent size={48} />
       </Icon>
