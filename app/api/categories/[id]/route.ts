@@ -86,9 +86,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 });
     }
 
+    // Add template count
+    const templateCount = await Template.countDocuments({ categoryIds: category._id });
+
     return NextResponse.json({
       ...category.toObject(),
-      id: category._id.toString()
+      id: category._id.toString(),
+      templateCount
     });
   } catch (error) {
     console.error('Error updating category:', error);

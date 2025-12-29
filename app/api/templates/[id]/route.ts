@@ -70,6 +70,7 @@ export async function GET(
         id: usage._id.toString(),
         resume: usage.resumeId
       })),
+      usageHistoryCount,
       _count: {
         usageHistory: usageHistoryCount
       }

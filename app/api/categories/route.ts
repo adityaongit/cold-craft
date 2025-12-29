@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
           return {
             ...cat,
             id: cat._id.toString(),
+            templateCount,
             _count: {
               templates: templateCount,
               children: childrenCount
@@ -151,6 +152,7 @@ export async function POST(request: NextRequest) {
     const categoryResponse = {
       ...category.toObject(),
       id: category._id.toString(),
+      templateCount,
       _count: {
         templates: templateCount,
         children: childrenCount
