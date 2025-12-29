@@ -14,14 +14,13 @@ import {
   IconButton,
   Input,
   Textarea,
-  Spinner,
-  Center,
   Dialog,
   Portal,
   FileUpload,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { EmptyState } from "@/components/common/EmptyState";
+import { ResumesPageSkeleton } from "@/components/common/SkeletonLoaders";
 import { FileUp, Upload, Download, Star, Trash2, File, Clock } from "lucide-react";
 import { ResumeWithVersion } from "@/types";
 import { formatFileSize, formatRelativeTime } from "@/lib/utils";
@@ -263,9 +262,7 @@ export default function ResumesPage() {
 
         {/* Resumes List */}
         {loading ? (
-          <Center py={12}>
-            <Spinner size="xl" color="brand.500" />
-          </Center>
+          <ResumesPageSkeleton />
         ) : resumes.length === 0 ? (
           <EmptyState
             icon={FileUp}

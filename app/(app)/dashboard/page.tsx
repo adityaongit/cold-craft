@@ -12,7 +12,7 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { MessageSquare, FileText, TrendingUp, Mail, Plus } from "lucide-react";
+import { PenSquare, FileText, TrendingUp, Mail, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UsageStats } from "@/types";
 import { useQuery } from "@tanstack/react-query";
@@ -69,7 +69,7 @@ export default function DashboardPage() {
                   borderRadius="lg"
                 >
                   <Icon fontSize="lg">
-                    <MessageSquare size={20} />
+                    <PenSquare size={20} />
                   </Icon>
                 </Box>
                 <VStack align="start" gap={0}>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                         This Month
                       </Text>
                       <Icon color="fg.muted">
-                        <MessageSquare size={18} />
+                        <Mail size={18} />
                       </Icon>
                     </HStack>
                     <Text fontSize="3xl" fontWeight="bold">

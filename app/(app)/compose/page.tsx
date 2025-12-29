@@ -17,11 +17,11 @@ import {
   Icon,
   IconButton,
   Portal,
-  createListCollection,
-  Spinner,
   Center,
+  createListCollection,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ComposePageSkeleton } from "@/components/common/SkeletonLoaders";
 import { Copy, Check, FileText, Sparkles } from "lucide-react";
 import { TemplateWithRelations } from "@/types";
 import { fillTemplate, copyToClipboard } from "@/lib/utils";
@@ -342,9 +342,7 @@ export default function ComposePage() {
     <Suspense
       fallback={
         <AppLayout title="Compose Message">
-          <Center h="50vh">
-            <Spinner size="xl" color="brand.500" />
-          </Center>
+          <ComposePageSkeleton />
         </AppLayout>
       }
     >

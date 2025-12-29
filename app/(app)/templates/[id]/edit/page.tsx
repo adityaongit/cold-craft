@@ -8,10 +8,9 @@ import {
   Text,
   Button,
   IconButton,
-  Spinner,
-  Center,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { TemplateEditSkeleton } from "@/components/common/SkeletonLoaders";
 import { ArrowLeft, Save, Eye } from "lucide-react";
 import { TemplateWithRelations } from "@/types";
 import { toaster, Toaster } from "@/components/ui/toaster";
@@ -105,9 +104,7 @@ export default function EditTemplatePage() {
           { label: "Edit Template" }
         ]}
       >
-        <Center h="50vh">
-          <Spinner size="xl" color="brand.500" />
-        </Center>
+        <TemplateEditSkeleton />
       </AppLayout>
     );
   }

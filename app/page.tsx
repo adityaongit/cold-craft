@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Center, Spinner } from "@chakra-ui/react";
+import { Center, Skeleton, VStack } from "@chakra-ui/react";
 import { useSession } from "@/lib/auth-client";
 
 export default function HomePage() {
@@ -21,7 +21,11 @@ export default function HomePage() {
 
   return (
     <Center h="100vh" bg="bg.surface">
-      <Spinner size="xl" />
+      <VStack gap={4}>
+        <Skeleton w={16} h={16} borderRadius="lg" />
+        <Skeleton w={48} h={4} />
+        <Skeleton w={32} h={3} />
+      </VStack>
     </Center>
   );
 }

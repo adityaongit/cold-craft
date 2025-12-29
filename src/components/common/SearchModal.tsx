@@ -15,7 +15,7 @@ import {
   Badge,
   Icon,
 } from "@chakra-ui/react";
-import { Search, FileText, Folder, MessageSquare, File } from "lucide-react";
+import { Search, FileText, Folder, File } from "lucide-react";
 
 interface SearchResult {
   id: string;

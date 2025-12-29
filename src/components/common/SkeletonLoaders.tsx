@@ -210,3 +210,128 @@ export function CategoriesPageSkeleton() {
     </VStack>
   );
 }
+
+// Resume Card Skeleton
+export function ResumeCardSkeleton() {
+  return (
+    <Card.Root bg="bg.panel" borderWidth="1px" borderColor="border.subtle" p={5}>
+      <VStack align="stretch" gap={4}>
+        <HStack justify="space-between">
+          <HStack gap={3}>
+            <Skeleton w={12} h={12} borderRadius="md" />
+            <VStack align="start" gap={1}>
+              <Skeleton h={5} w={40} />
+              <Skeleton h={3} w={24} />
+            </VStack>
+          </HStack>
+          <Skeleton w={6} h={6} borderRadius="md" />
+        </HStack>
+        <Skeleton h={3} w="full" />
+        <HStack justify="space-between">
+          <Skeleton h={4} w={32} />
+          <HStack gap={2}>
+            <Skeleton w={8} h={8} borderRadius="md" />
+            <Skeleton w={8} h={8} borderRadius="md" />
+          </HStack>
+        </HStack>
+      </VStack>
+    </Card.Root>
+  );
+}
+
+// Resumes Page Loading State
+export function ResumesPageSkeleton() {
+  return (
+    <VStack align="stretch" gap={4}>
+      {/* Header */}
+      <HStack justify="space-between">
+        <Skeleton h={8} w={40} />
+        <Skeleton h={10} w={40} />
+      </HStack>
+
+      {/* Resumes Grid */}
+      <Grid
+        templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
+        gap={4}
+      >
+        <ResumeCardSkeleton />
+        <ResumeCardSkeleton />
+        <ResumeCardSkeleton />
+      </Grid>
+    </VStack>
+  );
+}
+
+// Compose Page Loading State
+export function ComposePageSkeleton() {
+  return (
+    <Grid
+      templateColumns={{ base: "1fr", lg: "2fr 3fr" }}
+      gap={6}
+      h="calc(100vh - 180px)"
+    >
+      {/* Left Panel - Template Selection */}
+      <VStack align="stretch" gap={4} h="full">
+        <Skeleton h={10} w="full" />
+        <Skeleton h={10} w="full" />
+        <Box flex="1">
+          <Skeleton h={6} w={24} mb={3} />
+          <VStack gap={3}>
+            <Skeleton h={10} w="full" />
+            <Skeleton h={10} w="full" />
+            <Skeleton h={10} w="full" />
+          </VStack>
+        </Box>
+      </VStack>
+
+      {/* Right Panel - Preview */}
+      <VStack align="stretch" gap={4} h="full">
+        <HStack justify="space-between">
+          <Skeleton h={6} w={32} />
+          <Skeleton h={8} w={20} />
+        </HStack>
+        <Box
+          flex="1"
+          borderWidth="1px"
+          borderColor="border.subtle"
+          borderRadius="md"
+          p={6}
+        >
+          <VStack align="start" gap={3}>
+            <Skeleton h={4} w="full" />
+            <Skeleton h={4} w="90%" />
+            <Skeleton h={4} w="95%" />
+            <Skeleton h={4} w="full" />
+            <Skeleton h={4} w="85%" />
+          </VStack>
+        </Box>
+        <HStack justify="flex-end" gap={3}>
+          <Skeleton h={10} w={24} />
+          <Skeleton h={10} w={24} />
+        </HStack>
+      </VStack>
+    </Grid>
+  );
+}
+
+// Template Edit Form Skeleton
+export function TemplateEditSkeleton() {
+  return (
+    <VStack align="stretch" gap={6} maxW="4xl" mx="auto">
+      <Skeleton h={10} w="full" />
+      <Skeleton h={32} w="full" />
+      <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+        <Skeleton h={10} w="full" />
+        <Skeleton h={10} w="full" />
+        <Skeleton h={10} w="full" />
+        <Skeleton h={10} w="full" />
+      </Grid>
+      <Skeleton h={10} w="full" />
+      <Skeleton h={10} w="full" />
+      <HStack justify="flex-end" gap={3}>
+        <Skeleton h={10} w={24} />
+        <Skeleton h={10} w={24} />
+      </HStack>
+    </VStack>
+  );
+}
