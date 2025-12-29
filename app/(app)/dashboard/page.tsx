@@ -280,7 +280,7 @@ export default function DashboardPage() {
                           </Badge>
                         </HStack>
                         <VStack align="start" gap={1}>
-                          <Text fontWeight="semibold" fontSize="md" noOfLines={1}>
+                          <Text fontWeight="semibold" fontSize="md" lineClamp={1}>
                             {template.title}
                           </Text>
                           <Text fontSize="sm" color="brand.500" fontWeight="medium">

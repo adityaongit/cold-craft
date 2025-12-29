@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 
 // Validation schema for tag creation
@@ -11,7 +12,16 @@ const createTagSchema = z.object({
 // GET /api/tags - List all tags
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const tags = await prisma.tag.findMany({
+      where: {
+        userId: session.user.id,
+      },
       include: {
         _count: {
           select: { templates: true },
@@ -33,11 +43,18 @@ export async function GET(request: NextRequest) {
 // POST /api/tags - Create a new tag
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const validatedData = createTagSchema.parse(body);
 
     const tag = await prisma.tag.create({
       data: {
+        userId: session.user.id,
         name: validatedData.name,
         color: validatedData.color,
       },

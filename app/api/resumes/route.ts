@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -15,7 +16,16 @@ const createResumeSchema = z.object({
 // GET /api/resumes - List all resumes
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const resumes = await prisma.resume.findMany({
+      where: {
+        userId: session.user.id,
+      },
       include: {
         currentVersion: true,
         _count: {
@@ -44,6 +54,12 @@ export async function GET(request: NextRequest) {
 // POST /api/resumes - Create a new resume with file upload
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
 
     const name = formData.get('name') as string;
@@ -109,6 +125,7 @@ export async function POST(request: NextRequest) {
     // Create resume with first version
     const resume = await prisma.resume.create({
       data: {
+        userId: session.user.id,
         name,
         description,
         isDefault,
