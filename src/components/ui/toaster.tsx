@@ -22,7 +22,6 @@ export const Toaster = () => {
         toaster={toaster}
         insetInline={{ mdDown: "4" }}
         gap={2}
-        placement={{ base: "top", md: "top-end" }}
       >
         {(toast) => (
           <Toast.Root
@@ -44,7 +43,6 @@ export const Toaster = () => {
                 <Toast.Title
                   fontSize="sm"
                   fontWeight="500"
-                  color={{ base: "gray.900", _dark: "gray.100" }}
                 >
                   {toast.title}
                 </Toast.Title>
@@ -52,7 +50,6 @@ export const Toaster = () => {
               {toast.description && (
                 <Toast.Description
                   fontSize="xs"
-                  color={{ base: "gray.600", _dark: "gray.400" }}
                 >
                   {toast.description}
                 </Toast.Description>

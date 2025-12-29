@@ -32,26 +32,29 @@ function renderContentWithBadges(content: string) {
   const variableRegex = /\{\{([^}:|]+)(?::([^}|]+))?(?:\|([^}]+))?\}\}/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
-  let match;
+  let match: RegExpExecArray | null;
 
   while ((match = variableRegex.exec(content)) !== null) {
+    // Capture match in a const to ensure TypeScript knows it's not null
+    const currentMatch = match;
+
     // Add text before the variable
-    if (match.index > lastIndex) {
-      const text = content.substring(lastIndex, match.index);
+    if (currentMatch.index > lastIndex) {
+      const text = content.substring(lastIndex, currentMatch.index);
       // Split by newlines to preserve them
       text.split('\n').forEach((line, i, arr) => {
         parts.push(line);
         if (i < arr.length - 1) {
-          parts.push(<br key={`br-${match.index}-${i}`} />);
+          parts.push(<br key={`br-${currentMatch.index}-${i}`} />);
         }
       });
     }
 
     // Add the variable as a badge
-    const variableName = match[1].trim();
+    const variableName = currentMatch[1].trim();
     parts.push(
       <Badge
-        key={`${match.index}-${variableName}`}
+        key={`${currentMatch.index}-${variableName}`}
         variant="subtle"
         colorPalette="blue"
         size="sm"
@@ -61,7 +64,7 @@ function renderContentWithBadges(content: string) {
       </Badge>
     );
 
-    lastIndex = match.index + match[0].length;
+    lastIndex = currentMatch.index + currentMatch[0].length;
   }
 
   // Add remaining text
