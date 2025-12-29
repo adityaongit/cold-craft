@@ -91,7 +91,7 @@ export default function LoginPage() {
           {/* Logo/Header */}
           <VStack gap={2}>
             <Text fontSize="2xl" fontWeight="bold">
-              ColdCraft
+              PitchPad
             </Text>
             <Text fontSize="sm" color="fg.muted">
               Sign in to your account

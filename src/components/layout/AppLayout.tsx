@@ -91,8 +91,8 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
       <Flex
         as="header"
         align="center"
-        h="64px"
-        px={6}
+        h={{ base: "56px", md: "64px" }}
+        px={{ base: 3, md: 6 }}
         borderBottomWidth="1px"
         borderColor={{ base: "gray.200", _dark: "gray.700" }}
         bg="bg.canvas"
@@ -100,23 +100,24 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
         {/* Breadcrumb OR Search */}
         {(title || breadcrumbs) ? (
           <>
-            <HStack gap={3}>
-              {/* Logo */}
+            <HStack gap={{ base: 2, md: 3 }}>
+              {/* Logo - Hidden on mobile */}
               <Link href="/dashboard" style={{ textDecoration: 'none' }}>
                 <Text
-                  fontSize="sm"
+                  fontSize={{ base: "xs", md: "sm" }}
                   fontWeight="600"
                   letterSpacing="-0.01em"
                   cursor="pointer"
                   _hover={{ opacity: 0.8 }}
                   transition="opacity 0.15s"
+                  display={{ base: "none", md: "block" }}
                 >
-                  {isCollapsed ? "CC" : "ColdCraft"}
+                  CC
                 </Text>
               </Link>
 
               {/* Slash separator */}
-              <Text opacity={0.15} fontSize="33px" fontWeight="300" lineHeight="47.1438px">/</Text>
+              <Text display={{ base: "none", md: "block" }} opacity={0.15} fontSize="33px" fontWeight="300" lineHeight="47.1438px">/</Text>
 
               {/* Breadcrumb items */}
               {breadcrumbs ? (
@@ -128,31 +129,33 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
                         {item.href && !isLast ? (
                           <Link href={item.href} style={{ textDecoration: 'none' }}>
                             <Text
-                              fontSize="sm"
+                              fontSize={{ base: "xs", md: "sm" }}
                               fontWeight={isLast ? "semibold" : "normal"}
                               color={isLast ? "fg.default" : "fg.muted"}
                               _hover={{ color: "fg.default" }}
                               cursor="pointer"
+                              display={{ base: isLast ? "block" : "none", md: "block" }}
                             >
                               {item.label}
                             </Text>
                           </Link>
                         ) : (
                           <Text
-                            fontSize="sm"
+                            fontSize={{ base: "xs", md: "sm" }}
                             fontWeight={isLast ? "semibold" : "normal"}
                             color={isLast ? "fg.default" : "fg.muted"}
+                            display={{ base: isLast ? "block" : "none", md: "block" }}
                           >
                             {item.label}
                           </Text>
                         )}
-                        {!isLast && <Text opacity={0.15} fontSize="33px" fontWeight="300" lineHeight="47.1438px">/</Text>}
+                        {!isLast && <Text display={{ base: "none", md: "block" }} opacity={0.15} fontSize="33px" fontWeight="300" lineHeight="47.1438px">/</Text>}
                       </React.Fragment>
                     );
                   })}
                 </>
               ) : (
-                <Text fontSize="sm" fontWeight="semibold">
+                <Text fontSize={{ base: "xs", md: "sm" }} fontWeight="semibold">
                   {title}
                 </Text>
               )}
@@ -161,7 +164,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
             <Box flex={1} />
 
             {showSearch && (
-              <Box>
+              <Box display={{ base: "none", md: "block" }}>
                 <HStack
                   onClick={() => setSearchOpen(true)}
                   cursor="pointer"
@@ -174,7 +177,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
                   _hover={{ borderColor: { base: "gray.300", _dark: "gray.600" } }}
                   transition="all 0.15s"
                   gap={2}
-                  minW="300px"
+                  minW={{ base: "180px", sm: "200px", lg: "300px" }}
                 >
                   <Icon color="fg.muted" fontSize="sm">
                     <Search size={14} />
@@ -182,7 +185,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
                   <Text fontSize="sm" color="fg.muted" flex={1}>
                     Search...
                   </Text>
-                  <HStack gap={0.5}>
+                  <HStack gap={0.5} display={{ base: "none", lg: "flex" }}>
                     <Kbd fontSize="xs" px={1.5} py={0.5} bg="bg.subtle" borderRadius="sm">
                       ⌘
                     </Kbd>
@@ -208,7 +211,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
                 _hover={{ borderColor: { base: "gray.300", _dark: "gray.600" } }}
                 transition="all 0.15s"
                 gap={3}
-                minW="400px"
+                minW={{ base: "250px", sm: "300px", md: "400px" }}
               >
                 <Icon color="fg.muted" fontSize="sm">
                   <Search size={14} />
@@ -230,7 +233,20 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
 
         {/* Actions */}
         <Box flex={1} />
-        <HStack gap={2}>
+        <HStack gap={1}>
+          {/* Mobile Search Button */}
+          {showSearch && (
+            <IconButton
+              aria-label="Search"
+              variant="ghost"
+              size="sm"
+              display={{ base: "flex", md: "none" }}
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search size={16} />
+            </IconButton>
+          )}
+
           <IconButton
             aria-label="Toggle color mode"
             variant="ghost"
@@ -280,7 +296,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
 
       {/* Main Content Area with Sidebar */}
       <Flex flex={1} overflow="hidden">
-        {/* Collapsible Sidebar */}
+        {/* Collapsible Sidebar - Hidden on Mobile */}
         <Box
           as="aside"
           w={isCollapsed ? "60px" : "240px"}
@@ -290,7 +306,7 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
           borderColor={{ base: "gray.200", _dark: "gray.700" }}
           transition="width 0.2s ease"
           position="relative"
-          display="flex"
+          display={{ base: "none", md: "flex" }}
           flexDirection="column"
         >
         {/* Navigation */}
@@ -353,11 +369,63 @@ export function AppLayout({ children, title, breadcrumbs, subtitle, showSearch =
 
       {/* Page Content */}
       <Flex flex={1} direction="column" overflow="hidden">
-        <Box flex={1} overflowY="auto" p={6}>
+        <Box flex={1} overflowY="auto" p={{ base: 4, md: 6 }} pb={{ base: "80px", md: 6 }}>
           {children}
         </Box>
       </Flex>
       </Flex>
+
+      {/* Mobile Bottom Navigation */}
+      <Box
+        as="nav"
+        position="fixed"
+        bottom={0}
+        left={0}
+        right={0}
+        display={{ base: "block", md: "none" }}
+        bg="bg.canvas"
+        borderTopWidth="1px"
+        borderColor={{ base: "gray.200", _dark: "gray.700" }}
+        zIndex={1000}
+        pb="env(safe-area-inset-bottom)"
+      >
+        <HStack gap={0} justify="space-around" px={2} py={2}>
+          {navItems.slice(0, 5).map((item) => {
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                style={{ textDecoration: 'none', flex: 1 }}
+              >
+                <VStack
+                  gap={1}
+                  cursor="pointer"
+                  transition="all 0.2s"
+                  py={1.5}
+                  px={2}
+                >
+                  <Icon
+                    fontSize="xl"
+                    color={isActive ? "brand.500" : "fg.muted"}
+                  >
+                    <item.icon size={22} />
+                  </Icon>
+                  <Text
+                    fontSize="xs"
+                    fontWeight={isActive ? "600" : "normal"}
+                    color={isActive ? "brand.500" : "fg.muted"}
+                    textAlign="center"
+                  >
+                    {item.label}
+                  </Text>
+                </VStack>
+              </Link>
+            );
+          })}
+        </HStack>
+      </Box>
 
       {/* Centralized Search Modal */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

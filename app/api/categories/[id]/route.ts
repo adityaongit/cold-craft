@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/utils';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 
 // Validation schema for category update
@@ -18,9 +19,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
-    const category = await prisma.category.findUnique({
-      where: { id },
+    const category = await prisma.category.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
       include: {
         templates: {
           where: { isArchived: false },
@@ -70,13 +80,22 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const validatedData = updateCategorySchema.parse(body);
 
-    // Check if category exists
-    const existingCategory = await prisma.category.findUnique({
-      where: { id },
+    // Check if category exists and belongs to user
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
     });
 
     if (!existingCategory) {
@@ -93,6 +112,7 @@ export async function PUT(
 
       const slugExists = await prisma.category.findFirst({
         where: {
+          userId: session.user.id,
           slug,
           id: { not: id },
         },
@@ -144,10 +164,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
-    // Check if category has children
-    const category = await prisma.category.findUnique({
-      where: { id },
+    // Check if category exists, belongs to user, and has children
+    const category = await prisma.category.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
       include: {
         children: true,
         _count: {

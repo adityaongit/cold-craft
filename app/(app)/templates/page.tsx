@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Grid,
@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Plus, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TemplateWithRelations } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const platformOptions = createListCollection({
   items: [
@@ -44,69 +45,66 @@ const toneOptions = createListCollection({
   ],
 });
 
+async function fetchTemplates(filter: { platform: string; tone: string; isFavorite: boolean }) {
+  const params = new URLSearchParams();
+  if (filter.platform) params.set("platform", filter.platform);
+  if (filter.tone) params.set("tone", filter.tone);
+  if (filter.isFavorite) params.set("isFavorite", "true");
+
+  const res = await fetch(`/api/templates?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch templates");
+  const data = await res.json();
+  return data.data as TemplateWithRelations[];
+}
+
 export default function TemplatesPage() {
   const router = useRouter();
-  const [templates, setTemplates] = useState<TemplateWithRelations[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState({
     platform: "",
     tone: "",
     isFavorite: false,
   });
 
-  useEffect(() => {
-    fetchTemplates();
-  }, [filter]);
+  const { data: templates = [], isLoading: loading } = useQuery({
+    queryKey: ["templates", filter],
+    queryFn: () => fetchTemplates(filter),
+  });
 
-  async function fetchTemplates() {
-    try {
-      const params = new URLSearchParams();
-      if (filter.platform) params.set("platform", filter.platform);
-      if (filter.tone) params.set("tone", filter.tone);
-      if (filter.isFavorite) params.set("isFavorite", "true");
-
-      const res = await fetch(`/api/templates?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTemplates(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch templates:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleToggleFavorite(id: string, isFavorite: boolean) {
-    try {
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async ({ id, isFavorite }: { id: string; isFavorite: boolean }) => {
       const res = await fetch(`/api/templates/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isFavorite }),
       });
+      if (!res.ok) throw new Error("Failed to toggle favorite");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
 
-      if (res.ok) {
-        fetchTemplates();
-      }
-    } catch (error) {
-      console.error("Failed to toggle favorite:", error);
-    }
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/templates/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete template");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+
+  async function handleToggleFavorite(id: string, isFavorite: boolean) {
+    toggleFavoriteMutation.mutate({ id, isFavorite });
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this template?")) return;
-
-    try {
-      const res = await fetch(`/api/templates/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        fetchTemplates();
-      }
-    } catch (error) {
-      console.error("Failed to delete template:", error);
-    }
+    deleteMutation.mutate(id);
   }
 
   return (
@@ -124,7 +122,7 @@ export default function TemplatesPage() {
               </Tabs.Trigger>
             </Tabs.List>
 
-            <HStack gap={3}>
+            <HStack gap={3} flexDirection={{ base: "column", md: "row" }} w={{ base: "full", md: "auto" }}>
               <Button
                 onClick={() => router.push("/templates/new")}
                 bg={{ base: "white", _dark: "#f5f5f5" }}
@@ -135,6 +133,7 @@ export default function TemplatesPage() {
                 borderRadius="md"
                 fontWeight="500"
                 gap={2}
+                w={{ base: "full", md: "auto" }}
               >
                 <Plus size={16} />
                 New Template
@@ -143,7 +142,7 @@ export default function TemplatesPage() {
                 collection={platformOptions}
                 value={[filter.platform]}
                 onValueChange={(e) => setFilter({ ...filter, platform: e.value[0] })}
-                width="200px"
+                width={{ base: "full", md: "200px" }}
                 borderColor={{ base: "gray.300", _dark: "gray.400" }}
                 _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
               >
@@ -174,7 +173,7 @@ export default function TemplatesPage() {
                 collection={toneOptions}
                 value={[filter.tone]}
                 onValueChange={(e) => setFilter({ ...filter, tone: e.value[0] })}
-                width="200px"
+                width={{ base: "full", md: "200px" }}
                 borderColor={{ base: "gray.300", _dark: "gray.400" }}
                 _focusWithin={{ borderColor: { base: "gray.400", _dark: "gray.300" } }}
               >
@@ -213,13 +212,13 @@ export default function TemplatesPage() {
           <EmptyState
             icon={FileText}
             title="No templates yet"
-            description="Create your first template to get started with ColdCraft"
+            description="Create your first template to get started with PitchPad"
             actionLabel="Create Template"
             onAction={() => router.push("/templates/new")}
           />
         ) : (
           <Grid
-            templateColumns="repeat(auto-fill, minmax(350px, 1fr))"
+            templateColumns={{ base: "1fr", sm: "repeat(auto-fill, minmax(280px, 1fr))" }}
             gap={4}
           >
             {templates.map((template) => (

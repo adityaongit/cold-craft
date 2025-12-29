@@ -1,8 +1,8 @@
-# ColdCraft
+# PitchPad
 
 **Professional Outreach Message Composer**
 
-ColdCraft is a modern web application designed to streamline the creation of professional outreach messages, cold emails, LinkedIn messages, and job applications. With intelligent template management, variable substitution, and resume integration, ColdCraft helps you craft personalized messages efficiently.
+PitchPad is a modern web application designed to streamline the creation of professional outreach messages, cold emails, LinkedIn messages, and job applications. With intelligent template management, variable substitution, and resume integration, PitchPad helps you craft personalized messages efficiently.
 
 ## Features
 
@@ -51,7 +51,7 @@ The project uses Prisma with a local PostgreSQL database. The `.env` file should
 
 ```bash
 # Edit .env and update DATABASE_URL
-DATABASE_URL="postgresql://user:password@localhost:5432/coldcraft"
+DATABASE_URL="postgresql://user:password@localhost:5432/pitchpad"
 ```
 
 4. Run database migrations:

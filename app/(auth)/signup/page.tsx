@@ -105,7 +105,7 @@ export default function SignUpPage() {
           {/* Logo/Header */}
           <VStack gap={2}>
             <Text fontSize="2xl" fontWeight="bold">
-              ColdCraft
+              PitchPad
             </Text>
             <Text fontSize="sm" color="fg.muted">
               Create your account

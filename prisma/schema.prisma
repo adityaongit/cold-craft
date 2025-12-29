@@ -21,6 +21,12 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  templates     Template[]
+  categories    Category[]
+  resumes       Resume[]
+  tags          Tag[]
+  globalVariables GlobalVariable[]
+  contacts      Contact[]
 }
 
 model Session {
@@ -68,8 +74,8 @@ model Verification {
 // Categories for organizing templates
 model Category {
   id          String     @id @default(cuid())
-  name        String     @unique
-  slug        String     @unique
+  name        String
+  slug        String
   description String?
   color       String     @default("#6366F1") // Hex color for UI
   icon        String     @default("folder") // Lucide icon name
@@ -78,8 +84,13 @@ model Category {
   children    Category[] @relation("CategoryHierarchy")
   templates   Template[]
   order       Int        @default(0)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  @@unique([userId, name])
+  @@unique([userId, slug])
 }
 
 // Message templates with variable support
@@ -99,6 +110,8 @@ model Template {
   isFavorite    Boolean        @default(false)
   isArchived    Boolean        @default(false)
   usageHistory  UsageHistory[]
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -131,10 +144,14 @@ enum Length {
 // Tags for flexible organization
 model Tag {
   id        String     @id @default(cuid())
-  name      String     @unique
+  name      String
   color     String     @default("#8B5CF6")
   templates Template[]
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
+
+  @@unique([userId, name])
 }
 
 // Variables extracted from templates
@@ -169,12 +186,16 @@ enum VarType {
 // Global variables (reusable across templates)
 model GlobalVariable {
   id           String   @id @default(cuid())
-  name         String   @unique
+  name         String
   displayName  String
   value        String
   description  String?
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@unique([userId, name])
 }
 
 // Resume management with versioning
@@ -187,6 +208,8 @@ model Resume {
   currentVersion   ResumeVersion? @relation("CurrentVersion", fields: [currentVersionId], references: [id])
   isDefault    Boolean         @default(false)
   usageHistory UsageHistory[]
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 }
@@ -233,6 +256,8 @@ model Contact {
   company    String?
   position   String?
   notes      String?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

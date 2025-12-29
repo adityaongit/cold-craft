@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/utils';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 
 // Validation schema for category creation
@@ -15,12 +16,19 @@ const createCategorySchema = z.object({
 // GET /api/categories - List all categories with template counts
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const includeArchived = searchParams.get('includeArchived') === 'true';
     const parentId = searchParams.get('parentId');
 
-    // Build where clause
+    // Build where clause with userId filter
     const where: any = {
+      userId: session.user.id,
       ...(parentId === 'null' ? { parentId: null } : parentId ? { parentId } : {}),
     };
 
@@ -51,7 +59,12 @@ export async function GET(request: NextRequest) {
       orderBy: { order: 'asc' },
     });
 
-    return NextResponse.json(categories);
+    const response = NextResponse.json(categories);
+
+    // Cache for 2 minutes in browser, revalidate in background
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300');
+
+    return response;
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(
@@ -64,15 +77,24 @@ export async function GET(request: NextRequest) {
 // POST /api/categories - Create a new category
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const validatedData = createCategorySchema.parse(body);
 
     // Generate slug from name
     const slug = slugify(validatedData.name);
 
-    // Check if slug already exists
-    const existingCategory = await prisma.category.findUnique({
-      where: { slug },
+    // Check if slug already exists for this user
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        userId: session.user.id,
+        slug,
+      },
     });
 
     if (existingCategory) {
@@ -82,9 +104,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the highest order value
+    // Get the highest order value for this user
     const highestOrder = await prisma.category.findFirst({
-      where: { parentId: validatedData.parentId || null },
+      where: {
+        userId: session.user.id,
+        parentId: validatedData.parentId || null,
+      },
       orderBy: { order: 'desc' },
       select: { order: true },
     });
@@ -97,6 +122,7 @@ export async function POST(request: NextRequest) {
         color: validatedData.color,
         icon: validatedData.icon,
         parentId: validatedData.parentId,
+        userId: session.user.id,
         order: (highestOrder?.order || 0) + 1,
       },
       include: {

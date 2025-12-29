@@ -193,7 +193,7 @@ export default function SettingsPage() {
                 <VStack align="stretch" gap={6}>
                   <VStack align="start" gap={2}>
                     <Text fontSize="2xl" fontWeight="bold" color="brand.500">
-                      ColdCraft
+                      PitchPad
                     </Text>
                     <Text color={{ base: "gray.600", _dark: "gray.400" }}>
                       Professional Outreach Message Composer
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                   </VStack>
 
                   <Text fontSize="sm" color={{ base: "gray.500", _dark: "gray.500" }}>
-                    © 2024 ColdCraft. Built with ❤️ for better outreach.
+                    © 2024 PitchPad. Built with ❤️ for better outreach.
                   </Text>
                 </VStack>
               </Card.Root>

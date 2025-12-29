@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { extractVariables } from '@/lib/utils';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 
 // Validation schema for template update
@@ -22,9 +23,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
-    const template = await prisma.template.findUnique({
-      where: { id },
+    const template = await prisma.template.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
       include: {
         categories: true,
         tags: true,
@@ -67,13 +77,22 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const validatedData = updateTemplateSchema.parse(body);
 
-    // Check if template exists
-    const existingTemplate = await prisma.template.findUnique({
-      where: { id },
+    // Check if template exists and belongs to user
+    const existingTemplate = await prisma.template.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
       include: { variables: true },
     });
 
@@ -160,7 +179,29 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    // Verify template belongs to user before deleting
+    const template = await prisma.template.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
+
+    if (!template) {
+      return NextResponse.json(
+        { error: 'Template not found' },
+        { status: 404 }
+      );
+    }
+
     await prisma.template.delete({
       where: { id },
     });

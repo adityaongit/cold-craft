@@ -7,7 +7,7 @@ import { system } from "@/lib/theme";
 export function Provider(props: React.PropsWithChildren) {
   return (
     <ChakraProvider value={system}>
-      <ColorModeProvider defaultTheme="dark" storageKey="coldcraft-theme">
+      <ColorModeProvider defaultTheme="dark" storageKey="pitchpad-theme">
         {props.children}
       </ColorModeProvider>
     </ChakraProvider>

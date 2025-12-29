@@ -212,7 +212,7 @@ export default function CategoriesPage() {
         {/* Header */}
         <HStack justify="flex-end">
           <Button
-            onClick={() => setShowCreateForm(!showCreateForm)}
+            onClick={() => setShowCreateForm(true)}
             bg={{ base: "white", _dark: "#f5f5f5" }}
             color={{ base: "gray.900", _dark: "gray.900" }}
             borderWidth="1px"
@@ -221,125 +221,13 @@ export default function CategoriesPage() {
             borderRadius="md"
             fontWeight="500"
             gap={2}
+            size={{ base: "sm", md: "md" }}
           >
             <Plus size={16} />
-            New Category
+            <Text display={{ base: "none", sm: "block" }}>New Category</Text>
+            <Text display={{ base: "block", sm: "none" }}>New</Text>
           </Button>
         </HStack>
-
-        {/* Create Form */}
-        {showCreateForm && (
-          <Card.Root bg="bg.panel" borderWidth="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} p={6}>
-            <form onSubmit={handleCreate}>
-              <VStack align="stretch" gap={4}>
-                <Text fontSize="lg" fontWeight="semibold">
-                  Create New Category
-                </Text>
-
-                <Box>
-                  <Text fontSize="sm" fontWeight="medium" mb={2}>
-                    Category Name *
-                  </Text>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Job Applications"
-                    required
-                    borderColor={{ base: "gray.300", _dark: "gray.600" }}
-                    _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
-                  />
-                </Box>
-
-                <Box>
-                  <Text fontSize="sm" fontWeight="medium" mb={2}>
-                    Description
-                  </Text>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description of this category"
-                    rows={2}
-                    borderColor={{ base: "gray.300", _dark: "gray.600" }}
-                    _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
-                  />
-                </Box>
-
-                <Box>
-                  <Text fontSize="sm" fontWeight="medium" mb={2}>
-                    Icon / Emoji
-                  </Text>
-                  <SimpleGrid columns={8} gap={2}>
-                    {ICON_OPTIONS.map((option) => (
-                      <Box
-                        key={option.name}
-                        p={2}
-                        borderRadius="md"
-                        borderWidth="2px"
-                        borderColor={formData.icon === option.emoji ? "brand.500" : "border.subtle"}
-                        bg={formData.icon === option.emoji ? "brand.50" : "bg.surface"}
-                        cursor="pointer"
-                        textAlign="center"
-                        fontSize="xl"
-                        _hover={{ borderColor: "brand.400", bg: "brand.50" }}
-                        onClick={() => setFormData({ ...formData, icon: option.emoji })}
-                        title={option.name}
-                      >
-                        {option.emoji}
-                      </Box>
-                    ))}
-                  </SimpleGrid>
-                </Box>
-
-                <Box>
-                  <Text fontSize="sm" fontWeight="medium" mb={2}>
-                    Color
-                  </Text>
-                  <HStack gap={2}>
-                    {COLOR_OPTIONS.map((color) => (
-                      <Box
-                        key={color}
-                        w={10}
-                        h={10}
-                        borderRadius="md"
-                        bg={color}
-                        cursor="pointer"
-                        borderWidth="2px"
-                        borderColor={formData.color === color ? "gray.900" : "transparent"}
-                        _hover={{ transform: "scale(1.1)" }}
-                        transition="all 0.2s"
-                        onClick={() => setFormData({ ...formData, color })}
-                      />
-                    ))}
-                  </HStack>
-                </Box>
-
-                <HStack justify="flex-end" gap={3}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setShowCreateForm(false);
-                      setFormData({ name: "", description: "", color: "#6366F1", icon: "📁" });
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    bg={{ base: "white", _dark: "#f5f5f5" }}
-                    color={{ base: "gray.900", _dark: "gray.900" }}
-                    borderWidth="1px"
-                    borderColor={{ base: "gray.300", _dark: "gray.300" }}
-                    _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
-                    borderRadius="md"
-                    fontWeight="500"
-                  >
-                    Create Category
-                  </Button>
-                </HStack>
-              </VStack>
-            </form>
-          </Card.Root>
-        )}
 
         {/* Categories List */}
         {loading ? (
@@ -355,7 +243,7 @@ export default function CategoriesPage() {
             onAction={() => setShowCreateForm(true)}
           />
         ) : (
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={4}>
+          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={{ base: 3, md: 4 }}>
             {categories.map((category) => (
               <Card.Root
                 key={category.id}
@@ -447,8 +335,8 @@ export default function CategoriesPage() {
                           display="flex"
                           alignItems="center"
                           justifyContent="center"
-                          minW={10}
-                          minH={10}
+                          w={12}
+                          h={12}
                         >
                           {category.icon || "📁"}
                         </Box>
@@ -498,6 +386,132 @@ export default function CategoriesPage() {
           </Grid>
         )}
       </VStack>
+
+      {/* Create Category Dialog */}
+      <DialogRoot open={showCreateForm} onOpenChange={(e) => !e.open && setShowCreateForm(false)} placement="center">
+        <DialogBackdrop />
+        <DialogContent
+          maxW={{ base: "95vw", sm: "90vw", md: "2xl" }}
+          maxH={{ base: "90vh", md: "85vh" }}
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          overflowY="auto"
+        >
+          <form onSubmit={handleCreate}>
+            <DialogHeader>
+              <DialogTitle>Create New Category</DialogTitle>
+              <DialogCloseTrigger />
+            </DialogHeader>
+            <DialogBody>
+              <VStack align="stretch" gap={4}>
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    Category Name *
+                  </Text>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Job Applications"
+                    required
+                    borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                    _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+                  />
+                </Box>
+
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    Description
+                  </Text>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Brief description of this category"
+                    rows={2}
+                    borderColor={{ base: "gray.300", _dark: "gray.600" }}
+                    _focus={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+                  />
+                </Box>
+
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    Icon / Emoji
+                  </Text>
+                  <SimpleGrid columns={{ base: 6, sm: 8 }} gap={2}>
+                    {ICON_OPTIONS.map((option) => (
+                      <Box
+                        key={option.name}
+                        p={2}
+                        borderRadius="md"
+                        borderWidth="2px"
+                        borderColor={formData.icon === option.emoji ? "brand.500" : "border.subtle"}
+                        bg={formData.icon === option.emoji ? "brand.50" : "bg.surface"}
+                        cursor="pointer"
+                        textAlign="center"
+                        fontSize="xl"
+                        _hover={{ borderColor: "brand.400", bg: "brand.50" }}
+                        onClick={() => setFormData({ ...formData, icon: option.emoji })}
+                        title={option.name}
+                      >
+                        {option.emoji}
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                </Box>
+
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    Color
+                  </Text>
+                  <HStack gap={2} flexWrap="wrap">
+                    {COLOR_OPTIONS.map((color) => (
+                      <Box
+                        key={color}
+                        w={{ base: 8, sm: 10 }}
+                        h={{ base: 8, sm: 10 }}
+                        borderRadius="md"
+                        bg={color}
+                        cursor="pointer"
+                        borderWidth="2px"
+                        borderColor={formData.color === color ? "gray.900" : "transparent"}
+                        _hover={{ transform: "scale(1.1)" }}
+                        transition="all 0.2s"
+                        onClick={() => setFormData({ ...formData, color })}
+                      />
+                    ))}
+                  </HStack>
+                </Box>
+              </VStack>
+            </DialogBody>
+            <DialogFooter gap={{ base: 2, md: 3 }} flexDirection={{ base: "column-reverse", sm: "row" }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setFormData({ name: "", description: "", color: "#6366F1", icon: "📁" });
+                }}
+                w={{ base: "full", sm: "auto" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                bg={{ base: "white", _dark: "#f5f5f5" }}
+                color={{ base: "gray.900", _dark: "gray.900" }}
+                borderWidth="1px"
+                borderColor={{ base: "gray.300", _dark: "gray.300" }}
+                _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+                borderRadius="md"
+                fontWeight="500"
+                w={{ base: "full", sm: "auto" }}
+              >
+                Create Category
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogRoot>
 
       {/* Delete Confirmation Dialog */}
       <DialogRoot open={!!deleteId} onOpenChange={(e) => !e.open && setDeleteId(null)}>

@@ -8,6 +8,10 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://pitchpad.vercel.app",
+  ],
   emailAndPassword: {
     enabled: true,
     async sendResetPassword(data, request) {

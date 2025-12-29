@@ -63,7 +63,7 @@ export function Sidebar() {
                 <Sparkles />
               </Icon>
               <Text fontSize="xl" fontWeight="bold" color="brand.500">
-                ColdCraft
+                PitchPad
               </Text>
             </HStack>
           )}

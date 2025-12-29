@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { extractVariables } from '@/lib/utils';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 
 // Validation schema for template creation
@@ -17,6 +18,12 @@ const createTemplateSchema = z.object({
 // GET /api/templates - List templates with filters
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
 
     const page = parseInt(searchParams.get('page') || '1');
@@ -31,8 +38,9 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
+    // Build where clause with userId filter
     const where: any = {
+      userId: session.user.id,
       isArchived,
       ...(isFavorite && { isFavorite: true }),
       ...(platform && { platform }),
@@ -81,7 +89,7 @@ export async function GET(request: NextRequest) {
       prisma.template.count({ where }),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       data: templates,
       pagination: {
         total,
@@ -90,6 +98,11 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
+
+    // Cache for 1 minute in browser, revalidate in background
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=180');
+
+    return response;
   } catch (error) {
     console.error('Error fetching templates:', error);
     return NextResponse.json(
@@ -102,6 +115,12 @@ export async function GET(request: NextRequest) {
 // POST /api/templates - Create a new template
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const validatedData = createTemplateSchema.parse(body);
 
@@ -123,6 +142,7 @@ export async function POST(request: NextRequest) {
         platform: validatedData.platform,
         tone: validatedData.tone,
         length,
+        userId: session.user.id,
         categories: validatedData.categoryIds
           ? {
               connect: validatedData.categoryIds.map((id) => ({ id })),

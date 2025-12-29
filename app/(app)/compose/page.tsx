@@ -187,7 +187,7 @@ function ComposePageContent() {
                   Variables
                 </Text>
                 <Grid
-                  templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                  templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }}
                   gap={4}
                 >
                   {selectedTemplate.variables.map((variable) => (
