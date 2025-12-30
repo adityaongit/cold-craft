@@ -183,16 +183,20 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     >
       <DialogBackdrop />
       <DialogContent
-        maxW="600px"
+        maxW={{ base: "90vw", sm: "600px" }}
         position="fixed"
-        top="80px"
+        top={{ base: "60px", sm: "80px" }}
         left="50%"
         transform="translateX(-50%)"
       >
         <DialogBody p={0}>
-          <Box p={4} borderBottomWidth="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
-            <HStack gap={3}>
-              <Icon color="fg.muted">
+          <Box
+            p={{ base: 5, sm: 4 }}
+            borderBottomWidth="1px"
+            borderColor={{ base: "gray.200", _dark: "gray.700" }}
+          >
+            <HStack gap={{ base: 3, sm: 3 }}>
+              <Icon color="fg.muted" display={{ base: "none", sm: "block" }}>
                 <Search size={18} />
               </Icon>
               <Input
@@ -203,7 +207,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   setSelectedIndex(-1);
                 }}
                 onKeyDown={handleKeyDown}
-                autoFocus
                 fontSize="md"
                 border="none"
                 bg="transparent"
