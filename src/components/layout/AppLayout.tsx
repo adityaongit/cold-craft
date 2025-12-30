@@ -46,9 +46,19 @@ const navItems: NavItem[] = [
   { label: "Templates", icon: FileText, href: "/templates" },
   { label: "Compose", icon: PenSquare, href: "/compose" },
   { label: "Saved", icon: Bookmark, href: "/saved-messages" },
-  { label: "Resumes", icon: FileUp, href: "/resumes" },
+  { label: "Settings", icon: Settings, href: "/settings" }, // Mobile only (first 5)
   { label: "Categories", icon: Folder, href: "/categories" },
-  { label: "Settings", icon: Settings, href: "/settings" },
+  { label: "Resumes", icon: FileUp, href: "/resumes" },
+];
+
+// Desktop sidebar items (excludes Settings - accessible via user menu)
+const desktopNavItems: NavItem[] = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Templates", icon: FileText, href: "/templates" },
+  { label: "Compose", icon: PenSquare, href: "/compose" },
+  { label: "Saved", icon: Bookmark, href: "/saved-messages" },
+  { label: "Categories", icon: Folder, href: "/categories" },
+  { label: "Resumes", icon: FileUp, href: "/resumes" },
 ];
 
 interface AppLayoutProps {
@@ -88,12 +98,24 @@ export function AppLayout({ children, title, subtitle, showSearch = true, showBa
         as="header"
         align="center"
         h={{ base: "56px", md: "64px" }}
-        px={{ base: 3, md: 6 }}
+        px={{ base: 3, sm: 4, md: 6, lg: 8 }}
         borderBottomWidth="1px"
         borderColor={{ base: "gray.200", _dark: "gray.700" }}
         bg="bg.canvas"
       >
         <HStack gap={{ base: 2, md: 3 }} flex={1}>
+          {/* Back Button */}
+          {showBackButton && onBackClick && (
+            <IconButton
+              aria-label="Go back"
+              variant="ghost"
+              size="sm"
+              onClick={onBackClick}
+            >
+              <ArrowLeft size={18} />
+            </IconButton>
+          )}
+
           {/* Logo */}
           <Link href="/dashboard" style={{ textDecoration: 'none' }}>
             <Text
@@ -161,12 +183,12 @@ export function AppLayout({ children, title, subtitle, showSearch = true, showBa
           )}
 
           <IconButton
-            aria-label="Toggle color mode"
+            aria-label="Settings"
             variant="ghost"
             size="sm"
-            onClick={toggleColorMode}
+            onClick={() => router.push("/settings")}
           >
-            {mounted && (colorMode === "light" ? <Moon size={16} /> : <Sun size={16} />)}
+            <Settings size={16} />
           </IconButton>
 
           {/* User Menu */}
@@ -219,12 +241,12 @@ export function AppLayout({ children, title, subtitle, showSearch = true, showBa
           borderColor={{ base: "gray.200", _dark: "gray.700" }}
           transition="width 0.2s ease"
           position="relative"
-          display={{ base: "none", md: "flex" }}
+          display={{ base: "none", lg: "flex" }}
           flexDirection="column"
         >
         {/* Navigation */}
         <VStack gap={0.5} p={2} align="stretch" flex={1} overflowY="auto">
-          {navItems.map((item) => {
+          {desktopNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
 
             return (
@@ -282,7 +304,15 @@ export function AppLayout({ children, title, subtitle, showSearch = true, showBa
 
       {/* Page Content */}
       <Flex flex={1} direction="column" overflow="hidden">
-        <Box flex={1} overflowY="auto" p={{ base: 4, md: 6 }} pb={{ base: "80px", md: 6 }}>
+        <Box
+          flex={1}
+          overflowY="auto"
+          p={{ base: 4, md: 6 }}
+          pb={{ base: "80px", md: 6 }}
+          maxW="1200px"
+          mx="auto"
+          w="full"
+        >
           {children}
         </Box>
       </Flex>

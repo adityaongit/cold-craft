@@ -31,7 +31,7 @@ export async function connectDB() {
       bufferCommands: false,
       maxPoolSize: 10,
       minPoolSize: 2,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000, // Increased to match auth.ts
       socketTimeoutMS: 45000,
     };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   VStack,
@@ -12,10 +13,15 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Folder, ChevronRight, Moon, Sun } from "lucide-react";
+import { useColorMode } from "@/components/ui/color-mode";
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { colorMode, toggleColorMode } = useColorMode();
   const [autoSave, setAutoSave] = useState(true);
   const [notifications, setNotifications] = useState(true);
+
 
   return (
     <AppLayout title="Settings">
@@ -71,6 +77,81 @@ export default function SettingsPage() {
                           <Switch.Thumb />
                         </Switch.Control>
                       </Switch.Root>
+                    </HStack>
+                  </VStack>
+                </Card.Root>
+
+                {/* Appearance */}
+                <Card.Root bg={{ base: "white", _dark: "gray.800" }} p={6}>
+                  <VStack align="stretch" gap={4}>
+                    <Text fontSize="lg" fontWeight="semibold">
+                      Appearance
+                    </Text>
+
+                    <HStack justify="space-between">
+                      <HStack gap={3}>
+                        <Box
+                          p={2}
+                          borderRadius="md"
+                          bg={{ base: "gray.100", _dark: "gray.700" }}
+                        >
+                          {colorMode === "light" ? <Sun size={20} /> : <Moon size={20} />}
+                        </Box>
+                        <VStack align="start" gap={0}>
+                          <Text fontWeight="medium">Dark mode</Text>
+                          <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }}>
+                            {colorMode === "light" ? "Switch to dark theme" : "Switch to light theme"}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                      <Switch.Root
+                        checked={colorMode === "dark"}
+                        onCheckedChange={toggleColorMode}
+                      >
+                        <Switch.HiddenInput />
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                      </Switch.Root>
+                    </HStack>
+                  </VStack>
+                </Card.Root>
+
+                {/* Manage Categories - Mobile Only */}
+                <Card.Root
+                  bg={{ base: "white", _dark: "gray.800" }}
+                  p={6}
+                  display={{ base: "block", lg: "none" }}
+                >
+                  <VStack align="stretch" gap={4}>
+                    <Text fontSize="lg" fontWeight="semibold">
+                      Organization
+                    </Text>
+
+                    <HStack
+                      justify="space-between"
+                      borderRadius="md"
+                      cursor="pointer"
+                      _hover={{ bg: "bg.muted" }}
+                      transition="background 0.2s"
+                      onClick={() => router.push("/categories")}
+                    >
+                      <HStack gap={3}>
+                        <Box
+                          p={2}
+                          borderRadius="md"
+                          bg={{ base: "gray.100", _dark: "gray.700" }}
+                        >
+                          <Folder size={20} />
+                        </Box>
+                        <VStack align="start" gap={0}>
+                          <Text fontWeight="medium">Manage Categories</Text>
+                          <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }}>
+                            Organize your templates
+                          </Text>
+                        </VStack>
+                      </HStack>
+                      <ChevronRight size={20} color="gray" />
                     </HStack>
                   </VStack>
                 </Card.Root>

@@ -10,13 +10,15 @@ import {
   Button,
   Card,
   Badge,
+  Separator,
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { PenSquare, FileText, TrendingUp, Mail, Plus } from "lucide-react";
+import { PenSquare, FileText, TrendingUp, Mail, Folder, Link as LinkIcon, ExternalLink, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { UsageStats } from "@/types";
+import { UsageStats, ShortenedUrlWithTemplate } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardSkeleton } from "@/components/common/SkeletonLoaders";
+import { formatRelativeTime } from "@/lib/utils";
 
 async function fetchStats(): Promise<UsageStats> {
   const res = await fetch("/api/usage/stats");
@@ -31,6 +33,18 @@ export default function DashboardPage() {
     queryKey: ["usage-stats"],
     queryFn: fetchStats,
   });
+
+  // Fetch recent shortened URLs
+  const { data: urlsData } = useQuery<{ data: ShortenedUrlWithTemplate[] }>({
+    queryKey: ["shortened-urls-recent"],
+    queryFn: async () => {
+      const res = await fetch("/api/shortened-urls?limit=5");
+      if (!res.ok) throw new Error("Failed to fetch URLs");
+      return res.json();
+    },
+  });
+
+  const recentUrls = urlsData?.data || [];
 
   return (
     <AppLayout title="Dashboard">
@@ -89,7 +103,7 @@ export default function DashboardPage() {
               borderColor="border.subtle"
               _hover={{ borderColor: "brand.500", transform: "translateY(-2px)" }}
               transition="all 0.2s"
-              onClick={() => router.push("/templates/new")}
+              onClick={() => router.push("/categories")}
             >
               <HStack gap={3}>
                 <Box
@@ -99,13 +113,13 @@ export default function DashboardPage() {
                   borderRadius="lg"
                 >
                   <Icon fontSize="lg">
-                    <Plus size={20} />
+                    <Folder size={20} />
                   </Icon>
                 </Box>
                 <VStack align="start" gap={0}>
-                  <Text fontWeight="semibold" fontSize="md">New Template</Text>
+                  <Text fontWeight="semibold" fontSize="md">Categories</Text>
                   <Text fontSize="sm" color="fg.muted">
-                    Create template
+                    Organize templates
                   </Text>
                 </VStack>
               </HStack>
@@ -293,6 +307,72 @@ export default function DashboardPage() {
               </Box>
             )}
           </>
+        )}
+
+        {/* Recent Shortened URLs */}
+        {recentUrls.length > 0 && (
+          <Box>
+            <HStack justify="space-between" mb={4}>
+              <Text fontSize="lg" fontWeight="semibold">
+                Recent Shortened URLs
+              </Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/shortened-urls")}
+                gap={1}
+              >
+                View all
+                <ArrowRight size={14} />
+              </Button>
+            </HStack>
+            <Card.Root
+              bg="bg.panel"
+              borderWidth="1px"
+              borderColor="border.subtle"
+              overflow="hidden"
+            >
+              <VStack align="stretch" gap={0}>
+                {recentUrls.map((url, index) => (
+                  <Box key={url.id}>
+                    <HStack
+                      p={4}
+                      justify="space-between"
+                      _hover={{ bg: "bg.muted" }}
+                      transition="background 0.2s"
+                      cursor="pointer"
+                      onClick={() => window.open(url.shortenedUrl, '_blank')}
+                    >
+                      <VStack align="start" gap={2} flex={1} minW={0}>
+                        <HStack gap={2} w="full">
+                          <Text
+                            fontSize="sm"
+                            fontWeight="medium"
+                            truncate
+                            flex={1}
+                            title={url.originalUrl}
+                          >
+                            {url.originalUrl}
+                          </Text>
+                        </HStack>
+                        <HStack gap={3} fontSize="xs" color="fg.muted" flexWrap="wrap">
+                          <HStack gap={1}>
+                            <ExternalLink size={12} />
+                            <Text color="blue.500" fontWeight="medium">
+                              {url.shortenedUrl.replace('https://', '')}
+                            </Text>
+                          </HStack>
+                          <Text>•</Text>
+                          <Text>{formatRelativeTime(new Date(url.createdAt))}</Text>
+                        </HStack>
+                      </VStack>
+                    </HStack>
+                    {index < recentUrls.length - 1 && <Separator />}
+                  </Box>
+                ))}
+              </VStack>
+            </Card.Root>
+          </Box>
         )}
         </VStack>
       )}

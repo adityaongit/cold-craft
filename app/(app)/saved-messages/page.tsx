@@ -136,36 +136,58 @@ export default function SavedMessagesPage() {
             {messages.map((message) => (
               <Card.Root
                 key={message.id}
-                bg={{ base: "white", _dark: "gray.800" }}
+                bg="bg.panel"
+                borderWidth="1px"
+                borderColor="border.subtle"
                 p={5}
                 position="relative"
+                _hover={{ borderColor: "border.emphasized" }}
+                transition="border-color 0.2s"
               >
-                <VStack align="stretch" gap={3}>
+                <VStack align="stretch" gap={4}>
                   {/* Header */}
                   <HStack justify="space-between" align="start">
-                    <VStack align="start" gap={1} flex={1}>
-                      <Text fontSize="lg" fontWeight="semibold">
+                    <VStack align="start" gap={2} flex={1}>
+                      <Text fontSize="lg" fontWeight="600" lineHeight="1.3">
                         {message.title}
                       </Text>
                       {message.templateTitle && (
                         <Badge colorScheme="blue" variant="subtle" size="sm">
+                          <FileText size={12} style={{ marginRight: 4 }} />
                           {message.templateTitle}
                         </Badge>
                       )}
                     </VStack>
 
-                    <HStack gap={1}>
-                      <IconButton
-                        aria-label="Delete message"
-                        variant="ghost"
-                        size="sm"
-                        colorScheme="red"
-                        onClick={() => handleDelete(message.id)}
-                      >
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </HStack>
+                    <IconButton
+                      aria-label="Delete message"
+                      variant="ghost"
+                      size="sm"
+                      colorScheme="red"
+                      onClick={() => handleDelete(message.id)}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
                   </HStack>
+
+                  {/* Message Preview */}
+                  <Box
+                    bg="bg.subtle"
+                    p={3}
+                    borderRadius="md"
+                    fontSize="sm"
+                    color="fg.muted"
+                    lineHeight="1.6"
+                    css={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {message.content}
+                  </Box>
 
                   {/* Actions */}
                   <HStack gap={2}>
@@ -175,8 +197,6 @@ export default function SavedMessagesPage() {
                       gap={2}
                       onClick={() => setViewMessage(message)}
                       flex={1}
-                      borderColor={{ base: "gray.300", _dark: "gray.600" }}
-                      _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
                     >
                       <ExternalLink size={14} />
                       View Full
@@ -185,11 +205,7 @@ export default function SavedMessagesPage() {
                       size="sm"
                       gap={2}
                       onClick={() => handleUseInCompose(message)}
-                      bg={{ base: "white", _dark: "#f5f5f5" }}
-                      color={{ base: "gray.900", _dark: "gray.900" }}
-                      borderWidth="1px"
-                      borderColor={{ base: "gray.300", _dark: "gray.300" }}
-                      _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+                      colorScheme="blue"
                       flex={1}
                     >
                       Use in Compose
@@ -200,10 +216,10 @@ export default function SavedMessagesPage() {
                   <HStack
                     justify="space-between"
                     fontSize="xs"
-                    color={{ base: "gray.600", _dark: "gray.400" }}
+                    color="fg.muted"
                     pt={2}
                     borderTopWidth="1px"
-                    borderColor={{ base: "gray.200", _dark: "gray.700" }}
+                    borderColor="border.subtle"
                   >
                     <HStack gap={1}>
                       <Icon>

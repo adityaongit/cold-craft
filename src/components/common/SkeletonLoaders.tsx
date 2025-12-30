@@ -268,15 +268,16 @@ export function ComposePageSkeleton() {
     <Grid
       templateColumns={{ base: "1fr", lg: "2fr 3fr" }}
       gap={6}
-      h="calc(100vh - 180px)"
+      minH="600px"
     >
       {/* Left Panel - Template Selection */}
-      <VStack align="stretch" gap={4} h="full">
+      <VStack align="stretch" gap={4}>
         <Skeleton h={10} w="full" />
         <Skeleton h={10} w="full" />
-        <Box flex="1">
+        <Box>
           <Skeleton h={6} w={24} mb={3} />
           <VStack gap={3}>
+            <Skeleton h={10} w="full" />
             <Skeleton h={10} w="full" />
             <Skeleton h={10} w="full" />
             <Skeleton h={10} w="full" />
@@ -285,17 +286,17 @@ export function ComposePageSkeleton() {
       </VStack>
 
       {/* Right Panel - Preview */}
-      <VStack align="stretch" gap={4} h="full">
+      <VStack align="stretch" gap={4}>
         <HStack justify="space-between">
           <Skeleton h={6} w={32} />
           <Skeleton h={8} w={20} />
         </HStack>
         <Box
-          flex="1"
           borderWidth="1px"
           borderColor="border.subtle"
           borderRadius="md"
           p={6}
+          minH="400px"
         >
           <VStack align="start" gap={3}>
             <Skeleton h={4} w="full" />
@@ -303,6 +304,9 @@ export function ComposePageSkeleton() {
             <Skeleton h={4} w="95%" />
             <Skeleton h={4} w="full" />
             <Skeleton h={4} w="85%" />
+            <Skeleton h={4} w="full" />
+            <Skeleton h={4} w="93%" />
+            <Skeleton h={4} w="88%" />
           </VStack>
         </Box>
         <HStack justify="flex-end" gap={3}>
@@ -375,5 +379,50 @@ export function SavedMessagesPageSkeleton() {
       <SavedMessageCardSkeleton />
       <SavedMessageCardSkeleton />
     </Grid>
+  );
+}
+
+// Shortened URLs Table Loading State
+export function ShortenedUrlsTableSkeleton() {
+  return (
+    <Box overflowX="auto">
+      <VStack align="stretch" gap={0}>
+        {/* Table Header */}
+        <HStack
+          bg="bg.subtle"
+          p={3}
+          borderWidth="1px"
+          borderColor="border.subtle"
+          borderRadius="md"
+          borderBottomRadius={0}
+        >
+          <Skeleton h={4} w="35%" />
+          <Skeleton h={4} w="25%" />
+          <Skeleton h={4} w="15%" />
+          <Skeleton h={4} w="15%" />
+          <Skeleton h={4} w="10%" />
+        </HStack>
+
+        {/* Table Rows */}
+        {[1, 2, 3, 4, 5].map((i) => (
+          <HStack
+            key={i}
+            p={3}
+            borderWidth="1px"
+            borderColor="border.subtle"
+            borderTopWidth={0}
+            borderRadius={i === 5 ? "md" : 0}
+            borderTopRadius={0}
+          >
+            <Skeleton h={4} w="35%" />
+            <Skeleton h={4} w="25%" />
+            <Skeleton h={4} w="15%" />
+            <Skeleton h={4} w="15%" />
+            <Skeleton h={4} w="10%" />
+            <Skeleton h={6} w={6} borderRadius="md" />
+          </HStack>
+        ))}
+      </VStack>
+    </Box>
   );
 }

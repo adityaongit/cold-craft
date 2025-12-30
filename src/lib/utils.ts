@@ -183,3 +183,43 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
+
+/**
+ * Detect long URLs in text (>= minLength)
+ * Returns the first URL found that exceeds the minimum length
+ */
+export function detectLongUrls(text: string, minLength: number = 50): string | null {
+  // Regex to match URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const matches = text.match(urlRegex);
+
+  if (!matches) return null;
+
+  // Find first URL that exceeds length threshold
+  const longUrl = matches.find(url => url.length >= minLength);
+  return longUrl || null;
+}
+
+/**
+ * Validate URL format
+ */
+export function isValidUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract domain from URL for display
+ */
+export function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname;
+  } catch {
+    return url;
+  }
+}

@@ -32,8 +32,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ComposePageSkeleton } from "@/components/common/SkeletonLoaders";
 import { Copy, Check, FileText, Sparkles, Save } from "lucide-react";
 import { TemplateWithRelations } from "@/types";
-import { fillTemplate, copyToClipboard } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { fillTemplate, copyToClipboard, detectLongUrls } from "@/lib/utils";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toaster } from "@/components/ui/toaster";
 
 async function fetchTemplates() {
@@ -55,6 +55,53 @@ function ComposePageContent() {
     refetchOnWindowFocus: true,
   });
 
+  const shortenUrlMutation = useMutation({
+    mutationFn: async (data: { url: string; variableName: string }) => {
+      const res = await fetch("/api/shorten-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: data.url,
+          templateId: selectedTemplate?.id,
+          variableName: data.variableName,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to shorten URL");
+      }
+
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      // Replace long URL with shortened URL in variableValues
+      const currentValue = variableValues[variables.variableName];
+      const newValue = currentValue.replace(variables.url, data.shortenedUrl);
+
+      setVariableValues({
+        ...variableValues,
+        [variables.variableName]: newValue,
+      });
+
+      toaster.success({
+        title: "URL shortened successfully",
+        description: data.cached
+          ? "Using previously shortened URL"
+          : "New shortened URL created",
+      });
+
+      setShowShortenDialog(false);
+      setUrlToShorten(null);
+    },
+    onError: (error: Error) => {
+      toaster.error({
+        title: "Failed to shorten URL",
+        description: error.message,
+      });
+    },
+  });
+
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateWithRelations | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [composedMessage, setComposedMessage] = useState("");
@@ -63,6 +110,9 @@ function ComposePageContent() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState("");
   const [saving, setSaving] = useState(false);
+  const [urlToShorten, setUrlToShorten] = useState<{ url: string; variableName: string } | null>(null);
+  const [showShortenDialog, setShowShortenDialog] = useState(false);
+  const [shorteningInProgress, setShorteningInProgress] = useState(false);
 
   const templateCollection = useMemo(() => {
     return createListCollection({
@@ -72,6 +122,7 @@ function ComposePageContent() {
     });
   }, [templates]);
 
+  // Handle template selection and variable prefill
   useEffect(() => {
     if (templateId && templates.length > 0) {
       const template = templates.find((t) => t.id === templateId);
@@ -83,6 +134,7 @@ function ComposePageContent() {
         if (prefillData) {
           try {
             const prefillValues = JSON.parse(prefillData);
+            console.log('Prefilling variables:', prefillValues);
             setVariableValues(prefillValues);
             // Clear the storage after using it
             sessionStorage.removeItem('prefillVariables');
@@ -102,6 +154,23 @@ function ComposePageContent() {
             initialValues[v.name] = v.defaultValue || "";
           });
           setVariableValues(initialValues);
+        }
+      }
+    } else if (!templateId && templates.length > 0) {
+      // Handle prefill when navigating from saved messages without a specific template
+      const prefillData = sessionStorage.getItem('prefillVariables');
+      if (prefillData) {
+        try {
+          const prefillValues = JSON.parse(prefillData);
+          // Only apply if we have prefill data but no template is selected yet
+          if (Object.keys(prefillValues).length > 0) {
+            console.log('Prefilling variables without template:', prefillValues);
+            setVariableValues(prefillValues);
+          }
+          // Clear the storage after using it
+          sessionStorage.removeItem('prefillVariables');
+        } catch (error) {
+          console.error('Failed to parse prefill data:', error);
         }
       }
     }
@@ -178,6 +247,17 @@ function ComposePageContent() {
       toaster.error({ title: "Failed to save message" });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleShortenUrl() {
+    if (!urlToShorten) return;
+
+    setShorteningInProgress(true);
+    try {
+      await shortenUrlMutation.mutateAsync(urlToShorten);
+    } finally {
+      setShorteningInProgress(false);
     }
   }
 
@@ -281,12 +361,23 @@ function ComposePageContent() {
                       {variable.type === "TEXTAREA" ? (
                         <Textarea
                           value={variableValues[variable.name] || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const newValue = e.target.value;
                             setVariableValues({
                               ...variableValues,
-                              [variable.name]: e.target.value,
-                            })
-                          }
+                              [variable.name]: newValue,
+                            });
+
+                            // URL detection
+                            const longUrl = detectLongUrls(newValue, 50);
+                            if (longUrl) {
+                              setUrlToShorten({
+                                url: longUrl,
+                                variableName: variable.name,
+                              });
+                              setShowShortenDialog(true);
+                            }
+                          }}
                           placeholder={variable.defaultValue || `Enter ${variable.displayName.toLowerCase()}`}
                           rows={3}
                           size="sm"
@@ -297,12 +388,23 @@ function ComposePageContent() {
                         <Input
                           type={variable.type === "EMAIL" ? "email" : variable.type === "URL" ? "url" : variable.type === "PHONE" ? "tel" : variable.type === "DATE" ? "date" : "text"}
                           value={variableValues[variable.name] || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const newValue = e.target.value;
                             setVariableValues({
                               ...variableValues,
-                              [variable.name]: e.target.value,
-                            })
-                          }
+                              [variable.name]: newValue,
+                            });
+
+                            // URL detection
+                            const longUrl = detectLongUrls(newValue, 50);
+                            if (longUrl) {
+                              setUrlToShorten({
+                                url: longUrl,
+                                variableName: variable.name,
+                              });
+                              setShowShortenDialog(true);
+                            }
+                          }}
                           placeholder={variable.defaultValue || `Enter ${variable.displayName.toLowerCase()}`}
                           size="sm"
                           borderColor={{ base: "gray.300", _dark: "gray.400" }}
@@ -482,6 +584,72 @@ function ComposePageContent() {
               _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
             >
               Save Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
+
+      {/* Shorten URL Dialog */}
+      <DialogRoot
+        open={showShortenDialog}
+        onOpenChange={(e) => {
+          if (!e.open) {
+            setShowShortenDialog(false);
+            setUrlToShorten(null);
+          }
+        }}
+        placement="center"
+      >
+        <DialogBackdrop />
+        <DialogContent
+          maxW={{ base: "90vw", sm: "md" }}
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+        >
+          <DialogHeader>
+            <DialogTitle>Shorten Long URL?</DialogTitle>
+            <DialogCloseTrigger />
+          </DialogHeader>
+          <DialogBody>
+            <VStack align="stretch" gap={4}>
+              <Text fontSize="sm">
+                This URL is {urlToShorten?.url.length} characters long and might make your message look cluttered.
+              </Text>
+              <Box bg="bg.subtle" p={3} borderRadius="md">
+                <Text fontSize="xs" fontFamily="mono" wordBreak="break-all">
+                  {urlToShorten?.url}
+                </Text>
+              </Box>
+              <Text fontSize="xs" color="fg.muted">
+                Do you want to shorten this URL? We'll replace it with a shorter version.
+              </Text>
+            </VStack>
+          </DialogBody>
+          <DialogFooter gap={3}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowShortenDialog(false);
+                setUrlToShorten(null);
+              }}
+              borderColor={{ base: "gray.300", _dark: "gray.600" }}
+              _hover={{ borderColor: { base: "gray.400", _dark: "gray.500" } }}
+            >
+              Keep Original
+            </Button>
+            <Button
+              onClick={handleShortenUrl}
+              loading={shorteningInProgress}
+              loadingText="Shortening..."
+              bg={{ base: "white", _dark: "#f5f5f5" }}
+              color={{ base: "gray.900", _dark: "gray.900" }}
+              borderWidth="1px"
+              borderColor={{ base: "gray.300", _dark: "gray.300" }}
+              _hover={{ bg: { base: "gray.50", _dark: "#e5e5e5" } }}
+            >
+              Shorten URL
             </Button>
           </DialogFooter>
         </DialogContent>

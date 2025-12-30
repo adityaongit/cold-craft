@@ -39,6 +39,32 @@ export interface UsageStats {
   successRate: number | null;
 }
 
+// Shortened URL types
+export interface ShortenedUrlWithTemplate {
+  id: string;
+  _id: string;
+  userId: string;
+  originalUrl: string;
+  shortenedUrl: string;
+  templateId?: string | null;
+  templateTitle?: string | null;
+  variableName?: string;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShortenedUrlStats {
+  totalUrls: number;
+  totalClicks: number;
+  recentCount: number;
+  mostUsedUrl: {
+    originalUrl: string;
+    shortenedUrl: string;
+    usageCount: number;
+  } | null;
+}
+
 // Re-export model types
 export type {
   ICategory as Category,

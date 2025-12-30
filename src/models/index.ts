@@ -19,3 +19,6 @@ export type { IUsageHistory } from './UsageHistory';
 
 export { ComposedMessage } from './ComposedMessage';
 export type { IComposedMessage } from './ComposedMessage';
+
+export { ShortenedUrl } from './ShortenedUrl';
+export type { IShortenedUrl } from './ShortenedUrl';
