@@ -67,8 +67,14 @@ export async function GET(
     const templateResponse = {
       ...template,
       id: template._id.toString(),
-      categories: template.categoryIds || [],
-      tags: template.tagIds || [],
+      categories: (template.categoryIds || []).map((cat: any) => ({
+        ...cat,
+        id: cat._id.toString()
+      })),
+      tags: (template.tagIds || []).map((tag: any) => ({
+        ...tag,
+        id: tag._id.toString()
+      })),
       usageHistory: usageHistory.map((usage: any) => ({
         ...usage,
         id: usage._id.toString(),
@@ -148,8 +154,14 @@ export async function PUT(
     const templateResponse = {
       ...existingTemplate.toObject(),
       id: existingTemplate._id.toString(),
-      categories: existingTemplate.categoryIds,
-      tags: existingTemplate.tagIds
+      categories: (existingTemplate.categoryIds || []).map((cat: any) => ({
+        ...cat,
+        id: cat._id.toString()
+      })),
+      tags: (existingTemplate.tagIds || []).map((tag: any) => ({
+        ...tag,
+        id: tag._id.toString()
+      }))
     };
 
     return NextResponse.json(templateResponse);

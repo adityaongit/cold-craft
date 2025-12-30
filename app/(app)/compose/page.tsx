@@ -166,7 +166,8 @@ function ComposePageContent() {
           // Fall back to default values from freshly extracted variables
           const initialValues: Record<string, string> = {};
           currentVariables.forEach((v) => {
-            initialValues[v.name] = v.defaultValue || "";
+            // Use ?? instead of || to preserve empty string defaults
+            initialValues[v.name] = v.defaultValue ?? "";
           });
           setVariableValues(initialValues);
         }
@@ -174,7 +175,8 @@ function ComposePageContent() {
         // Initialize with default values from freshly extracted variables
         const initialValues: Record<string, string> = {};
         currentVariables.forEach((v) => {
-          initialValues[v.name] = v.defaultValue || "";
+          // Use ?? instead of || to preserve empty string defaults
+          initialValues[v.name] = v.defaultValue ?? "";
         });
         setVariableValues(initialValues);
       }
@@ -207,13 +209,7 @@ function ComposePageContent() {
 
   function handleTemplateSelect(template: TemplateWithRelations) {
     setSelectedTemplate(template);
-
-    // Initialize variable values with defaults
-    const initialValues: Record<string, string> = {};
-    template.variables.forEach((v) => {
-      initialValues[v.name] = v.defaultValue || "";
-    });
-    setVariableValues(initialValues);
+    // Variable values will be initialized by the useEffect with currentVariables
   }
 
   async function handleCopy() {

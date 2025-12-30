@@ -52,8 +52,16 @@ export default function NewTemplatePage() {
         router.push(`/templates`);
       } else {
         const error = await res.json();
+        let errorMessage = error.error || "Failed to create template";
+
+        // If there are validation details, show them
+        if (error.details && Array.isArray(error.details)) {
+          const messages = error.details.map((d: any) => `${d.path.join('.')}: ${d.message}`).join(', ');
+          errorMessage = `${errorMessage}: ${messages}`;
+        }
+
         toaster.error({
-          title: error.error || "Failed to create template",
+          title: errorMessage,
         });
       }
     } catch (error) {

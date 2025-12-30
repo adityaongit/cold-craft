@@ -70,8 +70,14 @@ export async function GET(request: NextRequest) {
     const templatesWithRelations = templates.map((template: any) => ({
       ...template,
       id: template._id.toString(),
-      categories: template.categoryIds || [],
-      tags: template.tagIds || [],
+      categories: (template.categoryIds || []).map((cat: any) => ({
+        ...cat,
+        id: cat._id.toString()
+      })),
+      tags: (template.tagIds || []).map((tag: any) => ({
+        ...tag,
+        id: tag._id.toString()
+      })),
       // Variables are already embedded
       usageHistoryCount: 0 // Will be calculated if needed
     }));
@@ -138,8 +144,14 @@ export async function POST(request: NextRequest) {
     const templateResponse = {
       ...template.toObject(),
       id: template._id.toString(),
-      categories: template.categoryIds,
-      tags: template.tagIds
+      categories: (template.categoryIds || []).map((cat: any) => ({
+        ...cat,
+        id: cat._id.toString()
+      })),
+      tags: (template.tagIds || []).map((tag: any) => ({
+        ...tag,
+        id: tag._id.toString()
+      }))
     };
 
     return NextResponse.json(templateResponse, { status: 201 });

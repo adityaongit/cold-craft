@@ -111,8 +111,42 @@ function nameToDisplayName(name: string): string {
  */
 export function fillTemplate(content: string, values: Record<string, string>): string {
   return content.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
-    const varName = variable.split(':')[0].split('|')[0].trim();
-    return values[varName] || match;
+    let varName = variable.trim();
+    let description = null;
+    let defaultValue = '';
+
+    // Parse: name:description|default or name:description or name|default
+    // Check for description (name:description)
+    if (varName.includes(':')) {
+      const [namePart, descPart] = varName.split(':');
+      varName = namePart.trim();
+      description = descPart.trim();
+    }
+
+    // Check for default value in name (name|default)
+    if (varName.includes('|')) {
+      const [namePart, defaultPart] = varName.split('|');
+      varName = namePart.trim();
+      defaultValue = defaultPart.trim();
+    }
+
+    // Check if description has default value
+    if (description && description.includes('|')) {
+      const [descPart, defaultPart] = description.split('|');
+      description = descPart.trim();
+      defaultValue = defaultPart.trim();
+    }
+
+    const value = values[varName];
+    const hasDefaultSyntax = variable.includes('|');
+
+    // If optional and no value provided, use default value
+    if (hasDefaultSyntax && (!value || value.trim() === '')) {
+      return defaultValue; // Use default from template, or empty string if no default
+    }
+
+    // If value exists, use it; otherwise keep placeholder (for required variables)
+    return value !== undefined ? value : match;
   });
 }
 
