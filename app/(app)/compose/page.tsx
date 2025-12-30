@@ -30,14 +30,23 @@ import {
 } from "@chakra-ui/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ComposePageSkeleton } from "@/components/common/SkeletonLoaders";
-import { Copy, Check, FileText, Sparkles, Save } from "lucide-react";
+import { Copy, Check, FileText, Sparkles, Save, Info } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { TemplateWithRelations } from "@/types";
 import { fillTemplate, copyToClipboard, detectLongUrls, extractVariables } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toaster } from "@/components/ui/toaster";
 
 async function fetchTemplates() {
-  const res = await fetch("/api/templates?isArchived=false");
+  // Add timestamp to prevent browser caching
+  const res = await fetch(`/api/templates?isArchived=false&_t=${Date.now()}`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
   if (!res.ok) throw new Error("Failed to fetch templates");
   const data = await res.json();
   return data.data as TemplateWithRelations[];
@@ -47,14 +56,32 @@ function ComposePageContent() {
   const searchParams = useSearchParams();
   const templateId = searchParams?.get("templateId");
 
-  const { data: templates = [], isLoading } = useQuery({
+  const { data: templates = [], isLoading, refetch } = useQuery({
     queryKey: ["templates", { isArchived: false }],
     queryFn: fetchTemplates,
     staleTime: 0, // Always refetch to get latest data
     gcTime: 0, // Don't cache
     refetchOnMount: "always", // Always refetch on mount
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: false, // Don't auto-refetch on interval
   });
+
+  // Force refetch when component mounts and when page becomes visible
+  useEffect(() => {
+    refetch();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refetch]);
 
   const shortenUrlMutation = useMutation({
     mutationFn: async (data: { url: string; variableName: string }) => {
@@ -139,15 +166,21 @@ function ComposePageContent() {
     });
   }, [selectedTemplate]);
 
-  // Handle template selection
+  // Handle template selection - force update when templates change
   useEffect(() => {
     if (templateId && templates.length > 0) {
       const template = templates.find((t) => t.id === templateId);
       if (template) {
         setSelectedTemplate(template);
       }
+    } else if (selectedTemplate && templates.length > 0) {
+      // If we have a selected template, update it with fresh data
+      const freshTemplate = templates.find((t) => t.id === selectedTemplate.id);
+      if (freshTemplate) {
+        setSelectedTemplate(freshTemplate);
+      }
     }
-  }, [templateId, templates]);
+  }, [templateId, templates, selectedTemplate?.id]);
 
   // Initialize variable values when currentVariables change (using fresh extraction)
   useEffect(() => {
@@ -362,19 +395,23 @@ function ComposePageContent() {
                 >
                   {currentVariables.map((variable) => (
                     <Box key={variable.name}>
-                      <Text fontSize="sm" fontWeight="medium" mb={2}>
-                        {variable.displayName}
-                        {variable.isRequired && (
-                          <Text as="span" color="red.500" ml={1}>
-                            *
-                          </Text>
-                        )}
-                      </Text>
-                      {variable.description && (
-                        <Text fontSize="xs" color="fg.muted" mb={2}>
-                          {variable.description}
+                      <HStack gap={1} mb={2}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {variable.displayName}
+                          {variable.isRequired && (
+                            <Text as="span" color="red.500" ml={1}>
+                              *
+                            </Text>
+                          )}
                         </Text>
-                      )}
+                        {variable.description && (
+                          <Tooltip content={variable.description} positioning={{ placement: "top" }}>
+                            <Icon color="fg.muted" cursor="help" fontSize="xs">
+                              <Info size={12} />
+                            </Icon>
+                          </Tooltip>
+                        )}
+                      </HStack>
 
                       {variable.type === "TEXTAREA" ? (
                         <Textarea
