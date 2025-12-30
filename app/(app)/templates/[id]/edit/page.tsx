@@ -71,8 +71,8 @@ export default function EditTemplatePage() {
       });
 
       if (res.ok) {
-        // Invalidate all template queries to refresh data everywhere
-        queryClient.invalidateQueries({ queryKey: ["templates"] });
+        // Completely remove template cache to force fresh fetch
+        queryClient.removeQueries({ queryKey: ["templates"] });
 
         toaster.success({
           title: "Template updated successfully",

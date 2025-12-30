@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Provider } from "@/components/ui/provider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { Toaster } from "sonner";
+import { ScrollbarHider } from "@/components/common/ScrollbarHider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable}`}>
+        <ScrollbarHider />
         <Provider>
           <QueryProvider>
             {children}

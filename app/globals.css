@@ -19,39 +19,66 @@
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow: -moz-scrollbars-none !important;
 }
 
-/* Hide scrollbars globally while maintaining scroll functionality */
-* {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE and Edge */
-}
-
-*::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Opera */
+html::-webkit-scrollbar {
+  display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
 
-*::-webkit-scrollbar-track {
-  display: none !important;
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow: -moz-scrollbars-none !important;
 }
 
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide scrollbars globally while maintaining scroll functionality */
+*,
+*::before,
+*::after {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar,
+*::before::-webkit-scrollbar,
+*::after::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+*::-webkit-scrollbar-track,
 *::-webkit-scrollbar-thumb {
   display: none !important;
 }
 
-/* Additional targeting for common scrollable elements */
+/* Target all potentially scrollable elements */
 div,
 section,
 article,
 aside,
 main,
-textarea {
+nav,
+header,
+footer,
+textarea,
+pre,
+code {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
@@ -61,7 +88,60 @@ section::-webkit-scrollbar,
 article::-webkit-scrollbar,
 aside::-webkit-scrollbar,
 main::-webkit-scrollbar,
-textarea::-webkit-scrollbar {
+nav::-webkit-scrollbar,
+header::-webkit-scrollbar,
+footer::-webkit-scrollbar,
+textarea::-webkit-scrollbar,
+pre::-webkit-scrollbar,
+code::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Override Chakra UI inline overflow styles */
+[style*="overflow"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[style*="overflow"]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Target elements with overflow-y or overflow-x set */
+[style*="overflow-y"],
+[style*="overflow-x"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[style*="overflow-y"]::-webkit-scrollbar,
+[style*="overflow-x"]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Ultra aggressive scrollbar hiding - targets ALL possible scrollable containers */
+[data-scroll-container],
+[data-scrollable],
+.chakra-stack,
+.chakra-box,
+.css-0,
+[class*="css-"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-scroll-container]::-webkit-scrollbar,
+[data-scrollable]::-webkit-scrollbar,
+.chakra-stack::-webkit-scrollbar,
+.chakra-box::-webkit-scrollbar,
+.css-0::-webkit-scrollbar,
+[class*="css-"]::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;

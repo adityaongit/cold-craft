@@ -4,6 +4,10 @@ import { auth } from '@/lib/auth';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
+// Disable caching for templates - always fetch fresh
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Validation schema for template creation
 const createTemplateSchema = z.object({
   title: z.string().min(1, 'Title is required'),

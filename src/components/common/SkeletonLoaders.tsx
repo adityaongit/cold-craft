@@ -343,25 +343,25 @@ export function TemplateEditSkeleton() {
 // Saved Message Card Skeleton
 export function SavedMessageCardSkeleton() {
   return (
-    <Card.Root bg="bg.panel" borderWidth="1px" borderColor="border.subtle" p={5}>
-      <VStack align="stretch" gap={3}>
-        <HStack justify="space-between">
-          <VStack align="start" gap={2} flex={1}>
-            <Skeleton h={5} w="70%" />
+    <Card.Root bg="bg.panel" borderWidth="1px" borderColor="border.subtle" p={5} w="full" maxW="full">
+      <VStack align="stretch" gap={3} w="full">
+        <HStack justify="space-between" w="full">
+          <VStack align="start" gap={2} flex={1} minW={0}>
+            <Skeleton h={5} w="70%" maxW="200px" />
             <Skeleton h={4} w={24} borderRadius="full" />
           </VStack>
-          <Skeleton w={6} h={6} borderRadius="md" />
+          <Skeleton w={6} h={6} borderRadius="md" flexShrink={0} />
         </HStack>
-        <Box bg="bg.subtle" p={3} borderRadius="md">
+        <Box bg="bg.subtle" p={3} borderRadius="md" w="full">
           <Skeleton h={3} w="full" mb={2} />
           <Skeleton h={3} w="90%" mb={2} />
           <Skeleton h={3} w="95%" />
         </Box>
-        <HStack gap={2}>
-          <Skeleton h={8} w="full" />
-          <Skeleton h={8} w="full" />
+        <HStack gap={2} w="full">
+          <Skeleton h={8} flex={1} />
+          <Skeleton h={8} flex={1} />
         </HStack>
-        <HStack justify="space-between" pt={2} borderTopWidth="1px">
+        <HStack justify="space-between" pt={2} borderTopWidth="1px" w="full">
           <Skeleton h={3} w={24} />
           <Skeleton h={3} w={16} />
         </HStack>

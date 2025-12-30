@@ -32,7 +32,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ComposePageSkeleton } from "@/components/common/SkeletonLoaders";
 import { Copy, Check, FileText, Sparkles, Save } from "lucide-react";
 import { TemplateWithRelations } from "@/types";
-import { fillTemplate, copyToClipboard, detectLongUrls } from "@/lib/utils";
+import { fillTemplate, copyToClipboard, detectLongUrls, extractVariables } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toaster } from "@/components/ui/toaster";
 
@@ -51,7 +51,8 @@ function ComposePageContent() {
     queryKey: ["templates", { isArchived: false }],
     queryFn: fetchTemplates,
     staleTime: 0, // Always refetch to get latest data
-    refetchOnMount: true,
+    gcTime: 0, // Don't cache
+    refetchOnMount: "always", // Always refetch on mount
     refetchOnWindowFocus: true,
   });
 
@@ -122,41 +123,62 @@ function ComposePageContent() {
     });
   }, [templates]);
 
-  // Handle template selection and variable prefill
+  // Re-extract variables from template content to get latest logic (e.g., pipe syntax for optional)
+  const currentVariables = useMemo(() => {
+    if (!selectedTemplate) return [];
+    // Extract fresh variables from template content
+    const extracted = extractVariables(selectedTemplate.content);
+    return extracted.map((v) => {
+      const existingVar: any = selectedTemplate.variables.find((ev) => ev.name === v.name);
+      return {
+        id: existingVar?.id || `temp-${v.name}`,
+        templateId: selectedTemplate.id,
+        createdAt: existingVar?.createdAt || new Date(),
+        ...v, // Spread the extracted variable properties
+      };
+    });
+  }, [selectedTemplate]);
+
+  // Handle template selection
   useEffect(() => {
     if (templateId && templates.length > 0) {
       const template = templates.find((t) => t.id === templateId);
       if (template) {
         setSelectedTemplate(template);
+      }
+    }
+  }, [templateId, templates]);
 
-        // Check if there are prefilled variables from saved messages
-        const prefillData = sessionStorage.getItem('prefillVariables');
-        if (prefillData) {
-          try {
-            const prefillValues = JSON.parse(prefillData);
-            console.log('Prefilling variables:', prefillValues);
-            setVariableValues(prefillValues);
-            // Clear the storage after using it
-            sessionStorage.removeItem('prefillVariables');
-          } catch (error) {
-            console.error('Failed to parse prefill data:', error);
-            // Fall back to default values
-            const initialValues: Record<string, string> = {};
-            template.variables.forEach((v) => {
-              initialValues[v.name] = v.defaultValue || "";
-            });
-            setVariableValues(initialValues);
-          }
-        } else {
-          // Initialize with default values if no prefill data
+  // Initialize variable values when currentVariables change (using fresh extraction)
+  useEffect(() => {
+    if (currentVariables.length > 0) {
+      // Check if there are prefilled variables from saved messages
+      const prefillData = sessionStorage.getItem('prefillVariables');
+      if (prefillData) {
+        try {
+          const prefillValues = JSON.parse(prefillData);
+          console.log('Prefilling variables:', prefillValues);
+          setVariableValues(prefillValues);
+          // Clear the storage after using it
+          sessionStorage.removeItem('prefillVariables');
+        } catch (error) {
+          console.error('Failed to parse prefill data:', error);
+          // Fall back to default values from freshly extracted variables
           const initialValues: Record<string, string> = {};
-          template.variables.forEach((v) => {
+          currentVariables.forEach((v) => {
             initialValues[v.name] = v.defaultValue || "";
           });
           setVariableValues(initialValues);
         }
+      } else {
+        // Initialize with default values from freshly extracted variables
+        const initialValues: Record<string, string> = {};
+        currentVariables.forEach((v) => {
+          initialValues[v.name] = v.defaultValue || "";
+        });
+        setVariableValues(initialValues);
       }
-    } else if (!templateId && templates.length > 0) {
+    } else if (!selectedTemplate && templates.length > 0) {
       // Handle prefill when navigating from saved messages without a specific template
       const prefillData = sessionStorage.getItem('prefillVariables');
       if (prefillData) {
@@ -174,7 +196,7 @@ function ComposePageContent() {
         }
       }
     }
-  }, [templateId, templates]);
+  }, [currentVariables, selectedTemplate, templates]);
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -333,7 +355,7 @@ function ComposePageContent() {
             </Box>
 
             {/* Variables Section - Scrollable */}
-            {selectedTemplate && selectedTemplate.variables.length > 0 && (
+            {selectedTemplate && currentVariables.length > 0 && (
               <Box flex="1" overflowY="auto" minH={0}>
                 <Text fontSize="sm" fontWeight="semibold" mb={3} color="fg.default">
                   Variables
@@ -342,7 +364,7 @@ function ComposePageContent() {
                   templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }}
                   gap={4}
                 >
-                  {selectedTemplate.variables.map((variable) => (
+                  {currentVariables.map((variable) => (
                     <Box key={variable.name}>
                       <Text fontSize="sm" fontWeight="medium" mb={2}>
                         {variable.displayName}

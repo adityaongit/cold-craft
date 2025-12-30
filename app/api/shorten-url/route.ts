@@ -13,9 +13,9 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-// Call TinyURL API to shorten URL (more reliable than is.gd)
-async function shortenWithTinyUrl(url: string): Promise<string> {
-  const apiUrl = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`;
+// Call is.gd API to shorten URL (free, no API key required)
+async function shortenWithIsGd(url: string): Promise<string> {
+  const apiUrl = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -26,19 +26,23 @@ async function shortenWithTinyUrl(url: string): Promise<string> {
     });
 
     if (!response.ok) {
-      throw new Error(`TinyURL API returned status ${response.status}`);
+      throw new Error(`is.gd API returned status ${response.status}`);
     }
 
     const shortenedUrl = await response.text();
 
-    // TinyURL returns plain text with the shortened URL
+    // is.gd returns plain text with the shortened URL or error message
     if (!shortenedUrl || !shortenedUrl.startsWith('http')) {
+      // Check if it's an error message
+      if (shortenedUrl.includes('Error')) {
+        throw new Error(shortenedUrl);
+      }
       throw new Error('Invalid response from URL shortener');
     }
 
     return shortenedUrl.trim();
   } catch (error: any) {
-    console.error('TinyURL API error:', error);
+    console.error('is.gd API error:', error);
     throw new Error('Failed to shorten URL. Please try again later.');
   }
 }
@@ -88,10 +92,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Not cached - call TinyURL API
+    // Not cached - call is.gd API
     let shortenedUrl: string;
     try {
-      shortenedUrl = await shortenWithTinyUrl(url);
+      shortenedUrl = await shortenWithIsGd(url);
     } catch (error: any) {
       console.error('URL shortener API error:', error);
       return NextResponse.json(

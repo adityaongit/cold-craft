@@ -30,6 +30,7 @@ export function extractVariables(content: string): Omit<Variable, 'id' | 'templa
     let name = fullMatch;
     let description: string | null = null;
     let defaultValue: string | null = null;
+    let hasDefaultSyntax = false; // Track if pipe was used
 
     // Check for description (name:description)
     if (fullMatch.includes(':')) {
@@ -43,6 +44,7 @@ export function extractVariables(content: string): Omit<Variable, 'id' | 'templa
       const [namePart, defaultPart] = name.split('|');
       name = namePart.trim();
       defaultValue = defaultPart.trim();
+      hasDefaultSyntax = true; // Pipe was used, so it's optional
     }
 
     // Check if description has default value
@@ -50,6 +52,7 @@ export function extractVariables(content: string): Omit<Variable, 'id' | 'templa
       const [descPart, defaultPart] = description.split('|');
       description = descPart.trim();
       defaultValue = defaultPart.trim();
+      hasDefaultSyntax = true; // Pipe was used, so it's optional
     }
 
     // Only add unique variables
@@ -64,7 +67,7 @@ export function extractVariables(content: string): Omit<Variable, 'id' | 'templa
         description,
         defaultValue,
         type,
-        isRequired: !defaultValue, // If has default, not required
+        isRequired: !hasDefaultSyntax, // If pipe syntax used (even with empty default), not required
         order: order++,
       });
     }

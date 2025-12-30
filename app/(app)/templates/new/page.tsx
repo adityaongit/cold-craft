@@ -43,8 +43,8 @@ export default function NewTemplatePage() {
       if (res.ok) {
         const template = await res.json();
 
-        // Invalidate all template queries to refresh data everywhere
-        queryClient.invalidateQueries({ queryKey: ["templates"] });
+        // Completely remove template cache to force fresh fetch
+        queryClient.removeQueries({ queryKey: ["templates"] });
 
         toaster.success({
           title: "Template created successfully",
