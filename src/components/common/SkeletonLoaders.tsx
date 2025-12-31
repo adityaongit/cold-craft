@@ -265,56 +265,79 @@ export function ResumesPageSkeleton() {
 // Compose Page Loading State
 export function ComposePageSkeleton() {
   return (
-    <Grid
-      templateColumns={{ base: "1fr", lg: "2fr 3fr" }}
-      gap={6}
-      minH="600px"
-    >
+    <>
       {/* Left Panel - Template Selection */}
-      <VStack align="stretch" gap={4}>
-        <Skeleton h={10} w="full" />
-        <Skeleton h={10} w="full" />
-        <Box>
-          <Skeleton h={6} w={24} mb={3} />
-          <VStack gap={3}>
+      <Card.Root
+        bg="bg.panel"
+        borderWidth="1px"
+        borderColor={{ base: "gray.200", _dark: "gray.700" }}
+        p={5}
+        display="flex"
+        flexDirection="column"
+        h="full"
+        overflow="hidden"
+      >
+        <VStack align="stretch" gap={4}>
+          <Box>
+            <Skeleton h={4} w={20} mb={3} />
             <Skeleton h={10} w="full" />
-            <Skeleton h={10} w="full" />
-            <Skeleton h={10} w="full" />
-            <Skeleton h={10} w="full" />
-          </VStack>
-        </Box>
-      </VStack>
+          </Box>
+          <Box>
+            <Skeleton h={4} w={24} mb={3} />
+            <Grid templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }} gap={4}>
+              <Skeleton h={20} w="full" />
+              <Skeleton h={20} w="full" />
+              <Skeleton h={20} w="full" />
+              <Skeleton h={20} w="full" />
+            </Grid>
+          </Box>
+        </VStack>
+      </Card.Root>
 
       {/* Right Panel - Preview */}
-      <VStack align="stretch" gap={4}>
-        <HStack justify="space-between">
-          <Skeleton h={6} w={32} />
-          <Skeleton h={8} w={20} />
-        </HStack>
-        <Box
-          borderWidth="1px"
-          borderColor="border.subtle"
-          borderRadius="md"
-          p={6}
-          minH="400px"
-        >
-          <VStack align="start" gap={3}>
-            <Skeleton h={4} w="full" />
-            <Skeleton h={4} w="90%" />
-            <Skeleton h={4} w="95%" />
-            <Skeleton h={4} w="full" />
-            <Skeleton h={4} w="85%" />
-            <Skeleton h={4} w="full" />
-            <Skeleton h={4} w="93%" />
-            <Skeleton h={4} w="88%" />
-          </VStack>
-        </Box>
-        <HStack justify="flex-end" gap={3}>
-          <Skeleton h={10} w={24} />
-          <Skeleton h={10} w={24} />
-        </HStack>
-      </VStack>
-    </Grid>
+      <Card.Root
+        bg="bg.panel"
+        borderWidth="1px"
+        borderColor={{ base: "gray.200", _dark: "gray.700" }}
+        p={5}
+        display="flex"
+        flexDirection="column"
+        h="full"
+        overflow="hidden"
+      >
+        <VStack align="stretch" gap={4}>
+          <HStack justify="space-between">
+            <Skeleton h={6} w={32} />
+            <HStack gap={2}>
+              <Skeleton h={8} w={20} />
+              <Skeleton h={8} w={20} />
+            </HStack>
+          </HStack>
+          <Box
+            bg="bg.surface"
+            borderRadius="md"
+            borderWidth="1px"
+            borderColor={{ base: "gray.200", _dark: "gray.700" }}
+            p={5}
+            minH="400px"
+          >
+            <VStack align="start" gap={3}>
+              <Skeleton h={4} w="full" />
+              <Skeleton h={4} w="90%" />
+              <Skeleton h={4} w="95%" />
+              <Skeleton h={4} w="full" />
+              <Skeleton h={4} w="85%" />
+              <Skeleton h={4} w="full" />
+              <Skeleton h={4} w="93%" />
+              <Skeleton h={4} w="88%" />
+            </VStack>
+          </Box>
+          <HStack justify="flex-end" pt={2} borderTopWidth="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
+            <Skeleton h={4} w={16} />
+          </HStack>
+        </VStack>
+      </Card.Root>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   DialogRoot,
@@ -86,6 +86,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [templates, setTemplates] = useState<SearchResult[]>([]);
   const [categories, setCategories] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -93,6 +94,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       fetchCategories();
       setQuery("");
       setSelectedIndex(-1);
+
+      // Only auto-focus on desktop (screen width > 768px)
+      if (typeof window !== 'undefined' && window.innerWidth > 768) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
     }
   }, [isOpen]);
 
@@ -200,6 +208,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 <Search size={18} />
               </Icon>
               <Input
+                ref={inputRef}
                 placeholder="Search templates, categories, or navigate..."
                 value={query}
                 onChange={(e) => {

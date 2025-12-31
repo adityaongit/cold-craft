@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Box,
@@ -55,6 +55,7 @@ async function fetchTemplates() {
 function ComposePageContent() {
   const searchParams = useSearchParams();
   const templateId = searchParams?.get("templateId");
+  const hasPrefilledRef = useRef(false);
 
   const { data: templates = [], isLoading, refetch } = useQuery({
     queryKey: ["templates", { isArchived: false }],
@@ -171,6 +172,11 @@ function ComposePageContent() {
     if (templateId && templates.length > 0) {
       const template = templates.find((t) => t.id === templateId);
       if (template) {
+        // Check if this is from "Use in Compose" (has prefill data)
+        const hasPrefillData = sessionStorage.getItem('prefillVariables');
+        if (hasPrefillData) {
+          hasPrefilledRef.current = false; // Allow prefilling
+        }
         setSelectedTemplate(template);
       }
     } else if (selectedTemplate && templates.length > 0) {
@@ -187,11 +193,11 @@ function ComposePageContent() {
     if (currentVariables.length > 0) {
       // Check if there are prefilled variables from saved messages
       const prefillData = sessionStorage.getItem('prefillVariables');
-      if (prefillData) {
+      if (prefillData && !hasPrefilledRef.current) {
         try {
           const prefillValues = JSON.parse(prefillData);
-          console.log('Prefilling variables:', prefillValues);
           setVariableValues(prefillValues);
+          hasPrefilledRef.current = true;
           // Clear the storage after using it
           sessionStorage.removeItem('prefillVariables');
         } catch (error) {
@@ -204,25 +210,26 @@ function ComposePageContent() {
           });
           setVariableValues(initialValues);
         }
-      } else {
-        // Initialize with default values from freshly extracted variables
+      } else if (!hasPrefilledRef.current) {
+        // Initialize with default values from freshly extracted variables (only if not prefilled)
         const initialValues: Record<string, string> = {};
         currentVariables.forEach((v) => {
           // Use ?? instead of || to preserve empty string defaults
           initialValues[v.name] = v.defaultValue ?? "";
         });
         setVariableValues(initialValues);
+        hasPrefilledRef.current = true;
       }
     } else if (!selectedTemplate && templates.length > 0) {
       // Handle prefill when navigating from saved messages without a specific template
       const prefillData = sessionStorage.getItem('prefillVariables');
-      if (prefillData) {
+      if (prefillData && !hasPrefilledRef.current) {
         try {
           const prefillValues = JSON.parse(prefillData);
           // Only apply if we have prefill data but no template is selected yet
           if (Object.keys(prefillValues).length > 0) {
-            console.log('Prefilling variables without template:', prefillValues);
             setVariableValues(prefillValues);
+            hasPrefilledRef.current = true;
           }
           // Clear the storage after using it
           sessionStorage.removeItem('prefillVariables');
@@ -242,6 +249,7 @@ function ComposePageContent() {
 
   function handleTemplateSelect(template: TemplateWithRelations) {
     setSelectedTemplate(template);
+    hasPrefilledRef.current = false; // Reset prefill flag when manually selecting template
     // Variable values will be initialized by the useEffect with currentVariables
   }
 
